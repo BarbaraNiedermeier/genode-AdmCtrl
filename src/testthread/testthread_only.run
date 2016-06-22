@@ -1,0 +1,40 @@
+#
+# Build
+#
+
+build { core init testthread }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+    <parent-provides>
+        <service name="LOG"/>
+        <service name="RM"/>
+        <service name="ROM"/>
+        <service name="CPU"/>
+    </parent-provides>
+    <default-route>
+        <any-service> <parent/> <any-child/> </any-service>
+    </default-route>
+    <start name="testthread">
+        <resource name="RAM" quantum="4M"/>
+        <provides><service name="testthread_parent"/></provides>
+    </start>
+</config>}
+
+#
+# Boot image
+#
+
+#build_boot_image { core init testthread ld.lib.so }
+build_boot_image { core init testthread }
+
+append qemu_args " -nographic " 
+
+#run_genode_until forever
+run_genode_until {child "testthread" exited with exit value .*\n} 10
