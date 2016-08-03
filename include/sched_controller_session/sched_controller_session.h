@@ -20,7 +20,7 @@ namespace Sched_controller {
 		virtual void get_init_status() = 0;
 
 		GENODE_RPC(Rpc_get_init_status, void, get_init_status);
-		GENODE_RPC_INTERFACE(Rpc_get_init_status;
+		GENODE_RPC_INTERFACE(Rpc_get_init_status);
 	};
 }
 
