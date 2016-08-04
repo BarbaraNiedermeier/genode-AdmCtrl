@@ -1,27 +1,25 @@
 /*
- * \brief  header for the sched_tmonitor component
+ * \brief  Client interface to the Sched_controller
  * \author Paul Nieleck
- * \date   2016/08/03
+ * \date   2016/08/04
  *
  */
 
-#ifndef _INCLUDE__SCHED_TMONITOR__SCHED_TMONITOR_H_
-#define _INCLUDE__SCHED_TMONITOR__SCHED_TMONITOR_H_
+#ifndef _INCLUDE__SCHED_CONTROLLER_SESSION__CLIENT_H_
+#define _INCLUDE__SCHED_CONTROLLER_SESSION__CLIENT_H_
 
 #include <sched_controller_session/sched_controller_session.h>
 #include <base/rpc_client.h>
 #include <base/printf.h>
 
-using namespace Sched_controller;
-
-namespace Sched_tmonitor {
+namespace Sched_controller {
 
 	struct Session_client : Genode::Rpc_client<Session>
 	{
 		Session_client(Genode::Capability<Session> cap)
 		: Genode::Rpc_client<Session>(cap) { }
 
-		void get_status()
+		void get_init_status()
 		{
 			PDBG("Calling Rpc-Interface function to get init status of sched_monitor.");
 			call<Rpc_get_init_status>();
@@ -29,4 +27,4 @@ namespace Sched_tmonitor {
 	};
 }
 
-#endif /* _INCLUDE__SCHED_TMONITOR__SCHED_TMONITOR_H_ */
+#endif /* _INCLUDE__SCHED_CONTROLLER_SESSION__CLIENT_H_ */

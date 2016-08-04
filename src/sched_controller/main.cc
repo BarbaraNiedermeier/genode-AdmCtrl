@@ -25,7 +25,7 @@ namespace Sched_controller {
 	{
 		protected:
 
-			Sched_controller::SessionComponent *_create_session(const char *args)
+			Sched_controller::Session_component *_create_session(const char *args)
 			{
 				return new(md_alloc()) Session_component();
 			}
@@ -34,7 +34,7 @@ namespace Sched_controller {
 
 			Root_component(Genode::Rpc_entrypoint *ep,
 			               Genode::Allocator *allocator)
-			: Genode::Root_component<Session_component(ep, allocator)
+			: Genode::Root_component<Session_component>(ep, allocator)
 			{
 				PDBG("Creating root component");
 			}
