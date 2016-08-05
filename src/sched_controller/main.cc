@@ -17,7 +17,7 @@ namespace Sched_controller {
 	struct Session_component : Genode::Rpc_object<Session>
 	{
 		void get_init_status() {
-			PDBG("sched_controller is initialized");
+			PINF("sched_controller is initialized");
 		}
 	};
 
