@@ -54,7 +54,7 @@
 
 using namespace Rq_buffer;
 
-template<typedef T>
+template <typename T>
 enq(T t)
 {
 
@@ -85,7 +85,7 @@ enq(T t)
 	return -1; /* buffer overflow */
 }
 
-template<typedef T>
+template <typename T>
 deq()
 {
 
@@ -122,7 +122,7 @@ Rq_buffer()
 	Rq_buffer(_DEFAULT_SIZE);
 }
 
-template<typedef T>
+template <typename T>
 Rq_buffer(int size)
 {
 	_buf_size = size;
