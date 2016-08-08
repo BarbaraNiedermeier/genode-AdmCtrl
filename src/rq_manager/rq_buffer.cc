@@ -49,13 +49,13 @@
  *
  */
 
-#include <rq_manager/rq_buffer.h>
+#include "rq_manager/rq_buffer.h"
 #include <base/printf.h>
 
-using namespace Rq_buffer;
+//using namespace Rq_manager;
 
 template <typename T>
-enq(T t)
+int Rq_buffer<T>::enq(T t)
 {
 
 	if (_window < 1) {
@@ -76,7 +76,7 @@ enq(T t)
 
 		_window--;
 		_buf[_tail] = t;
-	
+
 		PINF("New element inserted to buffer");
 
 		return 0;
@@ -86,10 +86,10 @@ enq(T t)
 }
 
 template <typename T>
-deq()
+T* Rq_buffer<T>::deq()
 {
 
-	if (window >= buf_size) {
+	if (_window >= _buf_size) {
 
 		PINF("The buffer is currently empty. Nothing to dequeue.");
 
@@ -108,22 +108,24 @@ deq()
 		}
 
 		_window++;
-		return buf[_current_head];
+		return _buf[_current_head];
 
 	}
 
-	return -1; /* buffer empty */
-}
-
-Rq_buffer()
-{
-	PINF("Constructor called without arguments. Creating buffer of default size.");
-
-	Rq_buffer(_DEFAULT_SIZE);
+// Caution, this is wrong!!!:
+	return _buf[0]; /* buffer empty */
 }
 
 template <typename T>
-Rq_buffer(int size)
+Rq_buffer<T>::Rq_buffer()
+{
+	PINF("Constructor called without arguments. Creating buffer of default size.");
+
+	Rq_buffer<T>::Rq_buffer(_DEFAULT_SIZE);
+}
+
+template <typename T>
+Rq_buffer<T>::Rq_buffer(int size)
 {
 	_buf_size = size;
 	_buf = new T[_buf_size]; /* create a new array of size _buf_size */
