@@ -27,7 +27,7 @@ install_config {
         <any-service> <parent/> <any-child/> </any-service>
     </default-route>
     <start name="rq_manager">
-        <resource name="RAM" quantum="1M"/>
+        <resource name="RAM" quantum="4M"/>
     </start>
 </config>}
 
@@ -35,7 +35,7 @@ install_config {
 #Boot image
 #
 
-build_boot_image { core init rq_manager }
+build_boot_image { core init rq_manager ld.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 

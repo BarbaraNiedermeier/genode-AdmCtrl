@@ -42,13 +42,15 @@ int main(void)
 {
 
 	Rq_buffer<double> buf(10);
+	PWRN("New Buffer created");
 	buf.enq(11.0);
 	buf.enq(22.0);
 	buf.enq(33.0);
-	buf.deq();
-	buf.deq();
-	buf.deq();
-	buf.deq();
+	PWRN("3 Elements enqueued");
+//	buf.deq();
+//	buf.deq();
+//	buf.deq();
+//	buf.deq();
 
 	return 0;
 }
