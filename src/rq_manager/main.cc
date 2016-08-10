@@ -37,16 +37,17 @@ using namespace Genode;
 int main()
 {
 
+	double *deqelem;
+
 	Rq_buffer<double> buf(10);
-	PDBG("New Buffer created");
+	PINF("New Buffer created");
 	buf.enq(11.0);
 	buf.enq(22.0);
 	buf.enq(33.0);
-	PDBG("Elements enqueued");
-//	buf.deq();
-//	buf.deq();
-//	buf.deq();
-//	buf.deq();
+	PINF("Elements enqueued");
+	int result = buf.deq(deqelem);
+	PINF("result is: %d", result);
+	PINF("address of the first dequeued element is: %p", deqelem);
 
 	return 0;
 }

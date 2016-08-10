@@ -1,3 +1,3 @@
 TARGET = rq_manager
-SRC_CC = rq_buffer.cc main.cc
+SRC_CC = main.cc
 LIBS   = base stdcxx
