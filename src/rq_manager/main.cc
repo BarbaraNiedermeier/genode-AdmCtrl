@@ -31,13 +31,25 @@ int Rq_manager::enq(int core, Ctr_task task)
 {
 
 	if (core < _num_cores) {
-		_rqs[core].enq(task);
+		int success = _rqs[core].enq(task);
 		PINF("Inserted task to core %d", core);
-		return 0;
+		return success;
 	}
 
 	return 1;
 
+}
+
+int Rq_manager::deq(int core, Ctr_task *task_ptr)
+{
+
+	if (core < _num_cores) {
+		int success = _rqs[core].deq(task_ptr);
+		PINF("Removed tast from core %d", core);
+		return success;
+	}
+
+	return 1;
 }
 
 Rq_manager::Rq_manager()
@@ -63,6 +75,7 @@ int main()
 	double *deqelem;
 	Ctr_task task1 = {666, 1000, true};
 	Ctr_task task2 = {777, 100, false};
+	Ctr_task *deq_task;
 
 	Rq_buffer<double> buf(10);
 	PINF("New Buffer created");
@@ -78,6 +91,10 @@ int main()
 	Rq_manager mgmt (2);
 	mgmt.enq(0, task1);
 	mgmt.enq(0, task2);
+
+	PINF("Starting to dequeue some task");
+	mgmt.deq(0, deq_task);
+	PINF("Got task with task_id: %d, wcet: %d, valid: %d", &deq_task->task_id, &deq_task->wcet, &deq_task->valid);
 
 	return 0;
 }

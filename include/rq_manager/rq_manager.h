@@ -36,7 +36,7 @@ class Rq_manager
 	public:
 
 		int enq(int, Ctr_task);
-//		int deq(int);
+		int deq(int, Ctr_task*);
 //		int deq_n(int, int);
 
 		Rq_manager();
