@@ -13,11 +13,14 @@
 #include <base/printf.h>
 #include "rq_manager/rq_buffer.h"
 
-//namespace Rq_manager {
-//
-//	class Rq_manager;
-//
-//}
+struct Ctr_task
+{
+
+	int task_id;
+	int wcet;
+	bool valid;
+
+};
 
 class Rq_manager
 {
@@ -25,19 +28,20 @@ class Rq_manager
 	private:
 
 		int _num_cores = 0;
+		Rq_buffer<Ctr_task> *_rqs;  /* array of ring buffers (Rq_buffer with fixed size) */
 		
+		int _init_rqs();
 		int _set_ncores(int);
-	//	int _set_rqs(Rq_buffer::Rq_buffer<int> *r);
 
 	public:
 
-		int enc(int, int);
-		int deq(int);
-		int deq_n(int, int);
+		int enq(int, Ctr_task);
+//		int deq(int);
+//		int deq_n(int, int);
 
 		Rq_manager();
 		Rq_manager(int);
-		~Rq_manager();
+//		~Rq_manager();
 
 };
 

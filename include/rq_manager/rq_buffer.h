@@ -72,6 +72,8 @@ class Rq_buffer
 		int _window; /* number of unallocated objects between tail and head */
 		T *_buf;
 
+		void _init_rq_buf(int); /* helper to use different constructors */
+
 		bool _lock = false;
 		bool _check_lock() { return _lock; };
 		void _set_lock() { _lock = true; };
@@ -87,6 +89,24 @@ class Rq_buffer
 		Rq_buffer(int);
 
 };
+
+/**
+ * Init variables according to constructor
+ *
+ * \param n size of the buffer
+ */
+template <typename T>
+void Rq_buffer<T>::_init_rq_buf(int size)
+{
+
+	_buf_size = size;
+	_buf = new T[_buf_size]; /* create a new array of size _buf_size */
+
+	_head = 0;
+	_tail = 0;
+	_window = _buf_size;
+}
+
 
 /**
  * Enque a new element at the tail pointer
@@ -204,18 +224,16 @@ Rq_buffer<T>::Rq_buffer()
 {
 	PINF("Constructor called without arguments. Creating buffer of default size.");
 
-	Rq_buffer<T>::Rq_buffer(_DEFAULT_SIZE);
+	_init_rq_buf(_DEFAULT_SIZE);
+
+	PINF("Buffer created, size is %d", _buf_size);
 }
 
 template <typename T>
 Rq_buffer<T>::Rq_buffer(int size)
 {
-	_buf_size = size;
-	_buf = new T[_buf_size]; /* create a new array of size _buf_size */
 
-	_head = 0;
-	_tail = 0;
-	_window = _buf_size;
+	_init_rq_buf(size);
 
 	PINF("Buffer created, size is %d", _buf_size);
 }
