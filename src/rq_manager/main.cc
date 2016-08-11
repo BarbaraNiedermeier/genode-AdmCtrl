@@ -72,20 +72,25 @@ using namespace Genode;
 int main()
 {
 
-	double *deqelem;
+	int *deqelem = 0;
+	int val1 { 11 };
+	int val2 = 22;
+	int val3 = 33;
 	Ctr_task task1 = {666, 1000, true};
 	Ctr_task task2 = {777, 100, false};
 	Ctr_task *deq_task;
 
-	Rq_buffer<double> buf(10);
+	Rq_buffer<int> buf(10);
 	PINF("New Buffer created");
-	buf.enq(11.0);
-	buf.enq(22.0);
-	buf.enq(33.0);
+	printf("Enq variable with value %d at pointer %p\n", val1, &val1);
+	buf.enq(val1);
+	buf.enq(val2);
+	buf.enq(val3);
 	PINF("Elements enqueued");
 	int result = buf.deq(deqelem);
 	PINF("result is: %d", result);
 	PINF("address of the first dequeued element is: %p", deqelem);
+	PINF("content is: %f", *deqelem);
 
 	PINF("Now we will create several rqs to work with!");
 	Rq_manager mgmt (2);
@@ -94,7 +99,7 @@ int main()
 
 	PINF("Starting to dequeue some task");
 	mgmt.deq(0, deq_task);
-	PINF("Got task with task_id: %d, wcet: %d, valid: %d", &deq_task->task_id, &deq_task->wcet, &deq_task->valid);
+	PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
 
 	return 0;
 }

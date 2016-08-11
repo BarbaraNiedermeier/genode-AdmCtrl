@@ -151,7 +151,8 @@ int Rq_buffer<T>::enq(T t)
 			_window--;
 			_buf[_tail] = t;
 
-			PINF("New element inserted to buffer");
+			PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
+			PINF("Content of this element is %d", _buf[_tail]);
 
 			_unset_lock();
 			return 0;
@@ -209,7 +210,8 @@ int Rq_buffer<T>::deq(T *t)
 			}
 
 			_window++;
-			t =  &_buf[_current_head];
+			t = &_buf[_current_head];
+			PDBG("The return address of the deq element should be: %p and t is: %p", &_buf[_current_head], t);
 
 			_unset_lock();
 			return 0;
