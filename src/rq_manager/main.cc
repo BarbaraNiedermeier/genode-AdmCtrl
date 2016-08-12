@@ -40,12 +40,12 @@ int Rq_manager::enq(int core, Ctr_task task)
 
 }
 
-int Rq_manager::deq(int core, Ctr_task *task_ptr)
+int Rq_manager::deq(int core, Ctr_task **task_ptr)
 {
 
 	if (core < _num_cores) {
 		int success = _rqs[core].deq(task_ptr);
-		PINF("Removed tast from core %d", core);
+		PINF("Removed task from core %d, pointer is %p", core, *task_ptr);
 		return success;
 	}
 
@@ -72,34 +72,25 @@ using namespace Genode;
 int main()
 {
 
-	int *deqelem = 0;
-	int val1 { 11 };
-	int val2 = 22;
-	int val3 = 33;
+	/* testing the Rq_buffer */
 	Ctr_task task1 = {666, 1000, true};
 	Ctr_task task2 = {777, 100, false};
+	Ctr_task task3 = {888, 1111, true};
 	Ctr_task *deq_task;
-
-	Rq_buffer<int> buf(10);
-	PINF("New Buffer created");
-	printf("Enq variable with value %d at pointer %p\n", val1, &val1);
-	buf.enq(val1);
-	buf.enq(val2);
-	buf.enq(val3);
-	PINF("Elements enqueued");
-	int result = buf.deq(deqelem);
-	PINF("result is: %d", result);
-	PINF("address of the first dequeued element is: %p", deqelem);
-	PINF("content is: %f", *deqelem);
 
 	PINF("Now we will create several rqs to work with!");
 	Rq_manager mgmt (2);
 	mgmt.enq(0, task1);
 	mgmt.enq(0, task2);
+	mgmt.enq(1, task3);
 
 	PINF("Starting to dequeue some task");
-	mgmt.deq(0, deq_task);
+	mgmt.deq(0, &deq_task);
 	PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
+        mgmt.deq(0, &deq_task);
+        PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
+        mgmt.deq(0, &deq_task);
+        PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
 
 	return 0;
 }

@@ -19,8 +19,8 @@
  * window. The initial window size is equal to the
  * size of the array.
  * 
- *      tail        head
- *        |           |
+ *        tail      head
+ *          |         |
  * ---------------------------
  * |x|x|x|x| | | | | |x|x|x|x|
  * ---------------------------
@@ -29,8 +29,8 @@
  *
  * inserting (enqueue) an element y:
  *
- *        tail      head
- *          |         |
+ *          tail    head
+ *            |       |
  * ---------------------------
  * |x|x|x|x|y| | | | |x|x|x|x|
  * ---------------------------
@@ -39,8 +39,8 @@
  *
  * removing (dequeue) an element y:
  *
- *        tail        head
- *          |           |
+ *          tail      head
+ *            |         |
  * ---------------------------
  * |x|x|x|x|y| | | | | |x|x|x|
  * ---------------------------
@@ -66,23 +66,23 @@ class Rq_buffer
 	private:
         
 		static const int _DEFAULT_SIZE = 100;
-		int _buf_size;
-		int _head;
-		int _tail;
-		int _window; /* number of unallocated objects between tail and head */
-		T *_buf;
+		int _buf_size; /* size of the buffer */
+		int _head;     /* points to the element that has been enqueued first */
+		int _tail;     /* points to the next free array index */
+		int _window;   /* number of unallocated objects between tail and head */
+		T *_buf;       /* actual buffer of type T - it's a pointer because we allocate memory for it later */
 
-		void _init_rq_buf(int); /* helper to use different constructors */
+		void _init_rq_buf(int); /* helper function for enabling different constructors */
 
-		bool _lock = false;
-		bool _check_lock() { return _lock; };
+		bool _lock = false;                   /* mutual exclusion state */
+		bool _check_lock() { return _lock; }; /* returns the lock state */
 		void _set_lock() { _lock = true; };
 		void _unset_lock() { _lock = false; };
 
 	public:
 
 		int enq(T);      /* insert an element at the tail */
-		int deq(T*);      /* deque the head */
+		int deq(T**);    /* deque the element at the head */
 //		T* deq_blk(int n); /* deque n elements beginning at the head */
 
 		Rq_buffer();
@@ -114,9 +114,9 @@ void Rq_buffer<T>::_init_rq_buf(int size)
  *
  * \param t any element that should be enqueued
  *
- * \return  0 enqueue operation successful
- *         -1 buffer full
- *         -2 buffer locked
+ * \return 0 enqueue operation successful
+ *         1 buffer full
+ *         2 buffer locked
  */
 template <typename T>
 int Rq_buffer<T>::enq(T t)
@@ -125,7 +125,7 @@ int Rq_buffer<T>::enq(T t)
 	if (_check_lock()) {
 
 		PWRN("Buffer locked");
-		return -2;
+		return 2;
 
 	} else {
 
@@ -138,22 +138,16 @@ int Rq_buffer<T>::enq(T t)
 
 		} else {
 
-			if (_tail >= _buf_size - 1) {
+			_buf[_tail] = t; /* insert element at the current free position */
+			PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
+			_tail++; /* move the free position one to the right or wrap around */
 
+			/* check if end of array has been reached */
+			if (_tail >= _buf_size) {
 				_tail = 0; /* wrap around if end of array reached */
-
-			} else {
-
-				_tail++; /* move tail to the right, if element is inserted */
-
 			}
 
-			_window--;
-			_buf[_tail] = t;
-
-			PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
-			PINF("Content of this element is %d", _buf[_tail]);
-
+			_window--; /* window of free space got smaller, decrease it */
 			_unset_lock();
 			return 0;
 
@@ -161,29 +155,37 @@ int Rq_buffer<T>::enq(T t)
 
 	}
 
-	return -1; /* buffer overflow */
+	return 1; /* buffer overflow */
 }
 
 /**
- * Dequeue an element at the head pointer
- * of the buffer.
+ * Dequeue an element at the head pointer.
  *
- * \param *t pointer to the list element
- *           that is to be returned
+ * \param **t pointer to the list element pointer
+ *            that is to be returned
  *
- * \return  0 dequeue operation successful
- *         -1 buffer empty
- *         -2 buffer locked
+ * \return 0 dequeue operation successful
+ *         1 buffer empty
+ *         2 buffer locked
  *         
+ * The function takes a pointer to a pointer
+ * as input argument. The inner pointer represents
+ * the memory address to which we want to store
+ * the memory address of the list element that
+ * is at position of _head.
+ * The head is moved one position to the right,
+ * i.e. to the next element in the list and the
+ * counter for the window-size is incremented
+ * since the space of one element was freed.
  */
 template <typename T>
-int Rq_buffer<T>::deq(T *t)
+int Rq_buffer<T>::deq(T **t)
 {
 
 	if (_check_lock()) {
 
 		PWRN("Buffer locked");
-		return -2;
+		return 2;
 
 	} else {
 
@@ -192,33 +194,27 @@ int Rq_buffer<T>::deq(T *t)
 		if (_window >= _buf_size) {
 
 			PINF("The buffer is currently empty. Nothing to dequeue.");
+			*t = nullptr; /* returning null pointer so no old data is used by anyone */
 			_unset_lock();
-			return -1;
+			return 1;
 
 		} else {
 
-			int _current_head = _head;
+			*t = &_buf[_head]; /* save address of the element located at the head */
+			_head++;           /* move head one position to the right */
 
-			if (_head >= _buf_size - 1) {
-
+			/* check if end of array has been reached */
+			if (_head >= _buf_size) {
 				_head = 0; /* wrap around if end of array reached */
-
-			} else {
-
-				_head++; /* move head to the right if element is removed */	
-
 			}
 
 			_window++;
-			t = &_buf[_current_head];
-			PDBG("The return address of the deq element should be: %p and t is: %p", &_buf[_current_head], t);
-
 			_unset_lock();
 			return 0;
 		}
 	}
 
-	return -1; /* buffer empty */
+	return 1; /* buffer empty */
 }
 
 template <typename T>
