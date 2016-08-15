@@ -5,16 +5,20 @@
  *
  */
 
+/* global includes */
 #include <base/env.h> /* not sure if needed */
 #include <base/printf.h>
+
+/* local includes */
 #include "rq_manager/rq_manager.h"
 #include "rq_manager/rq_buffer.h"
+#include "rq_manager/rq_task.h"
 
 int Rq_manager::_init_rqs()
 {
 
 	PDBG("Initialize the array of Rq_buffers");
-	_rqs = new Rq_buffer<Ctr_task>[_num_cores];
+	_rqs = new Rq_buffer<Rq_task>[_num_cores];
 
 	return 0;
 
@@ -27,7 +31,7 @@ int Rq_manager::_set_ncores(int n)
 	return 0;
 }
 
-int Rq_manager::enq(int core, Ctr_task task)
+int Rq_manager::enq(int core, Rq_task task)
 {
 
 	if (core < _num_cores) {
@@ -40,7 +44,7 @@ int Rq_manager::enq(int core, Ctr_task task)
 
 }
 
-int Rq_manager::deq(int core, Ctr_task **task_ptr)
+int Rq_manager::deq(int core, Rq_task **task_ptr)
 {
 
 	if (core < _num_cores) {
@@ -73,10 +77,10 @@ int main()
 {
 
 	/* testing the Rq_buffer */
-	Ctr_task task1 = {666, 1000, true};
-	Ctr_task task2 = {777, 100, false};
-	Ctr_task task3 = {888, 1111, true};
-	Ctr_task *deq_task;
+	Rq_task task1 = {666, 1000, true};
+	Rq_task task2 = {777, 100, false};
+	Rq_task task3 = {888, 1111, true};
+	Rq_task *deq_task;
 
 	PINF("Now we will create several rqs to work with!");
 	Rq_manager mgmt (2);
@@ -87,8 +91,6 @@ int main()
 	PINF("Starting to dequeue some task");
 	mgmt.deq(0, &deq_task);
 	PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
-        mgmt.deq(0, &deq_task);
-        PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
         mgmt.deq(0, &deq_task);
         PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
 
