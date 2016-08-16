@@ -48,9 +48,9 @@ namespace Rq_manager {
 		 * return the capability to access the
 		 * dataspace of the Rq_manager
 		 */
-		Genode::Dataspace_capability dataspace()
+		Genode::Dataspace_capability get_core_rq_ds(core)
 		{
-			return call<Rpc_dataspace>();
+			return call<Rpc_get_core_rq_ds>(core);
 		}
 
 }

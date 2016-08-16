@@ -59,181 +59,219 @@
 
 #include <base/printf.h>
 
-template <typename T>
-class Rq_buffer
+namespace Rq_manager
 {
 
-	private:
-        
-		static const int _DEFAULT_SIZE = 100;
-		int _buf_size; /* size of the buffer */
-		int _head;     /* points to the element that has been enqueued first */
-		int _tail;     /* points to the next free array index */
-		int _window;   /* number of unallocated objects between tail and head */
-		T *_buf;       /* actual buffer of type T - it's a pointer because we allocate memory for it later */
+	template <typename T>
+	class Rq_buffer
+	{
 
-		void _init_rq_buf(int); /* helper function for enabling different constructors */
+		private:
+			
+			static const int _DEFAULT_SIZE = 100;
+			int _buf_size;                    /* size of the buffer */
+			int _head;                        /* points to the element that has been enqueued first */
+			int _tail;                        /* points to the next free array index */
+			int _window;                      /* number of unallocated objects between tail and head */
+			T *_buf = nullptr;                /* buffer of type T - it's an array */
+			Genode::Dataspace_capability _ds; /* dataspace capability of the shared object */
 
-		bool _lock = false;                   /* mutual exclusion state */
-		bool _check_lock() { return _lock; }; /* returns the lock state */
-		void _set_lock() { _lock = true; };
-		void _unset_lock() { _lock = false; };
+			void _init_rq_buf(int);  /* helper function for enabling different constructors */
 
-	public:
+			bool _lock = false;                   /* mutual exclusion state */
+			bool _check_lock() { return _lock; }; /* returns the lock state */
+			void _set_lock() { _lock = true; };
+			void _unset_lock() { _lock = false; };
 
-		int enq(T);      /* insert an element at the tail */
-		int deq(T**);    /* deque the element at the head */
-//		T* deq_blk(int n); /* deque n elements beginning at the head */
+		public:
 
-		Rq_buffer();
-		Rq_buffer(int);
+			int enq(T);      /* insert an element at the tail */
+			int deq(T**);    /* deque the element at the head */
+	//		T* deq_blk(int n); /* deque n elements beginning at the head */
 
-};
+			void init_w_shared_ds(int);                                /* helpere function for createing the Rq_buffer within a shared memory */
+			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
 
-/**
- * Init variables according to constructor
- *
- * \param n size of the buffer
- */
-template <typename T>
-void Rq_buffer<T>::_init_rq_buf(int size)
-{
+			Rq_buffer();
+			Rq_buffer(int);
 
-	_buf_size = size;
-	_buf = new T[_buf_size]; /* create a new array of size _buf_size */
+	};
 
-	_head = 0;
-	_tail = 0;
-	_window = _buf_size;
-}
+	/**
+	 * Init variables according to constructor.
+	 * Only executed if constructor with arguments
+	 * had been called.
+	 *
+	 * \param n size of the buffer
+	 */
+	template <typename T>
+	void Rq_buffer<T>::_init_rq_buf(int size)
+	{
 
+		_buf_size = size;
+		_buf = new T[_buf_size]; /* create a new array of size _buf_size */
 
-/**
- * Enque a new element at the tail pointer
- * of the buffer.
- *
- * \param t any element that should be enqueued
- *
- * \return 0 enqueue operation successful
- *         1 buffer full
- *         2 buffer locked
- */
-template <typename T>
-int Rq_buffer<T>::enq(T t)
-{
+		_head = 0;
+		_tail = 0;
+		_window = _buf_size;
+	}
 
-	if (_check_lock()) {
+	/**
+	 * Init new Rq_buffer in a shared dataspace.
+	 * Must be called separately, if constructor
+	 * with no arguments has been called.
+	 *
+	 * \param n size of the buffer
+	 */
+	template <typename T>
+	void Rq_buffer<T>::init_w_shared_ds(int size)
+	{
 
-		PWRN("Buffer locked");
-		return 2;
+		_buf_size = size;
+		int ds_size = sizeof(T) * _buf_size;
 
-	} else {
+		/* 
+		 * create dataspace capability, i.e. mem is allocated,
+         * and attach the dataspace (the first address of the
+		 * allocated mem) to _buf
+		 */
+		_ds = Genode::env()->ram_session()->alloc(ds_size);
+		_buf = Genode::env()->rm_session()->attach(_ds);
 
-		_set_lock();
+		_head = 0;
+		_tail = 0;
+		_window = _buf_size;
 
-		if (_window < 1) {
-
-			PERR("The buffer is currently full. Can't insert further elements.");
-			_unset_lock();
-
-		} else {
-
-			_buf[_tail] = t; /* insert element at the current free position */
-			PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
-			_tail++; /* move the free position one to the right or wrap around */
-
-			/* check if end of array has been reached */
-			if (_tail >= _buf_size) {
-				_tail = 0; /* wrap around if end of array reached */
-			}
-
-			_window--; /* window of free space got smaller, decrease it */
-			_unset_lock();
-			return 0;
-
-		}
+		Genode::printf("New dataspace capability created and attached to address %p.\n", _buf);
+		Genode::printf("The last element of this dataspace is located at address %p.\n", &_buf[_buf_size - 1]);
 
 	}
 
-	return 1; /* buffer overflow */
-}
+	/**
+	 * Enque a new element at the tail pointer
+	 * of the buffer.
+	 *
+	 * \param t any element that should be enqueued
+	 *
+	 * \return 0 enqueue operation successful
+	 *         1 buffer full
+	 *         2 buffer locked
+	 */
+	template <typename T>
+	int Rq_buffer<T>::enq(T t)
+	{
 
-/**
- * Dequeue an element at the head pointer.
- *
- * \param **t pointer to the list element pointer
- *            that is to be returned
- *
- * \return 0 dequeue operation successful
- *         1 buffer empty
- *         2 buffer locked
- *         
- * The function takes a pointer to a pointer
- * as input argument. The inner pointer represents
- * the memory address to which we want to store
- * the memory address of the list element that
- * is at position of _head.
- * The head is moved one position to the right,
- * i.e. to the next element in the list and the
- * counter for the window-size is incremented
- * since the space of one element was freed.
- */
-template <typename T>
-int Rq_buffer<T>::deq(T **t)
-{
+		if (_check_lock()) {
 
-	if (_check_lock()) {
-
-		PWRN("Buffer locked");
-		return 2;
-
-	} else {
-
-		_set_lock();
-	
-		if (_window >= _buf_size) {
-
-			PINF("The buffer is currently empty. Nothing to dequeue.");
-			*t = nullptr; /* returning null pointer so no old data is used by anyone */
-			_unset_lock();
-			return 1;
+			PWRN("Buffer locked");
+			return 2;
 
 		} else {
 
-			*t = &_buf[_head]; /* save address of the element located at the head */
-			_head++;           /* move head one position to the right */
+			_set_lock();
 
-			/* check if end of array has been reached */
-			if (_head >= _buf_size) {
-				_head = 0; /* wrap around if end of array reached */
+			if (_window < 1) {
+
+				PERR("The buffer is currently full. Can't insert further elements.");
+				_unset_lock();
+
+			} else {
+
+				_buf[_tail] = t; /* insert element at the current free position */
+				PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
+				_tail++; /* move the free position one to the right or wrap around */
+
+				/* check if end of array has been reached */
+				if (_tail >= _buf_size) {
+					_tail = 0; /* wrap around if end of array reached */
+				}
+
+				_window--; /* window of free space got smaller, decrease it */
+				_unset_lock();
+				return 0;
+
 			}
 
-			_window++;
-			_unset_lock();
-			return 0;
 		}
+
+		return 1; /* buffer overflow */
 	}
 
-	return 1; /* buffer empty */
-}
+	/**
+	 * Dequeue an element at the head pointer.
+	 *
+	 * \param **t pointer to the list element pointer
+	 *            that is to be returned
+	 *
+	 * \return 0 dequeue operation successful
+	 *         1 buffer empty
+	 *         2 buffer locked
+	 *         
+	 * The function takes a pointer to a pointer
+	 * as input argument. The inner pointer represents
+	 * the memory address to which we want to store
+	 * the memory address of the list element that
+	 * is at position of _head.
+	 * The head is moved one position to the right,
+	 * i.e. to the next element in the list and the
+	 * counter for the window-size is incremented
+	 * since the space of one element was freed.
+	 */
+	template <typename T>
+	int Rq_buffer<T>::deq(T **t)
+	{
 
-template <typename T>
-Rq_buffer<T>::Rq_buffer()
-{
-	PINF("Constructor called without arguments. Creating buffer of default size.");
+		if (_check_lock()) {
 
-	_init_rq_buf(_DEFAULT_SIZE);
+			PWRN("Buffer locked");
+			return 2;
 
-	PINF("Buffer created, size is %d", _buf_size);
-}
+		} else {
 
-template <typename T>
-Rq_buffer<T>::Rq_buffer(int size)
-{
+			_set_lock();
+		
+			if (_window >= _buf_size) {
 
-	_init_rq_buf(size);
+				PINF("The buffer is currently empty. Nothing to dequeue.");
+				*t = nullptr; /* returning null pointer so no old data is used by anyone */
+				_unset_lock();
+				return 1;
 
-	PINF("Buffer created, size is %d", _buf_size);
+			} else {
+
+				*t = &_buf[_head]; /* save address of the element located at the head */
+				_head++;           /* move head one position to the right */
+
+				/* check if end of array has been reached */
+				if (_head >= _buf_size) {
+					_head = 0; /* wrap around if end of array reached */
+				}
+
+				_window++;
+				_unset_lock();
+				return 0;
+			}
+		}
+
+		return 1; /* buffer empty */
+	}
+
+	template <typename T>
+	Rq_buffer<T>::Rq_buffer()
+	{
+
+		PINF("Constructor called without arguments. Please allocate dataspace by calling init_w_shared_ds(int size).");
+
+	}
+
+	template <typename T>
+	Rq_buffer<T>::Rq_buffer(int size)
+	{
+
+		_init_rq_buf(size);
+
+		PINF("Buffer created, size is %d", _buf_size);
+	}
 }
 
 #endif /* _INCLUDE__RQ_MANAGER__RQ_BUFFER_H_ */

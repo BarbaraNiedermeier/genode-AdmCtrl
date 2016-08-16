@@ -20,27 +20,31 @@
 #include "rq_manager/rq_task.h"
 #include "rq_manager_session/rq_manager_session.h"
 
-class Rq_manager
-{
+namespace Rq_manager {
 
-	private:
+	class Rq_manager
+	{
 
-		int _num_cores = 0;
-		Rq_buffer<Rq_task> *_rqs;  /* array of ring buffers (Rq_buffer with fixed size) */
-		
-		int _init_rqs();
-		int _set_ncores(int);
+		private:
 
-	public:
+			int _num_cores = 0;
+			Rq_buffer<Rq_task> *_rqs;                 /* array of ring buffers (Rq_buffer with fixed size) */
+			
+			int _init_rqs(int);
+			int _set_ncores(int);
 
-		int enq(int, Rq_task);
-		int deq(int, Rq_task**);
-//		int deq_n(int, int);
+		public:
 
-		Rq_manager();
-		Rq_manager(int);
-//		~Rq_manager();
+			int enq(int, Rq_task);
+			int deq(int, Rq_task**);
+			Genode::Dataspace_capability get_core_rq_ds(int);
+//			int deq_n(int, int);
 
-};
+			Rq_manager();
+			Rq_manager(int);
+//			~Rq_manager();
+
+	};
+}
 
 #endif /* _INCLUDE__RQ_MANAGER__RQ_MANAGER_H_ */

@@ -8,13 +8,17 @@
 #ifndef _INCLUDE__RQ_MANAGER__RQ_TASK_H_
 #define _INCLUDE__RQ_MANAGER__RQ_TASK_H_
 
-struct Rq_task
+namespace Rq_manager
 {
 
-        int task_id;
-        int wcet;
-        bool valid;
+	struct Rq_task
+	{
 
-};
+			int task_id;
+			int wcet;
+			bool valid;
+
+	};
+}
 
 #endif /* _INCLUDE__RQ_MANAGER__RQ_TASK_H_ */
