@@ -13,7 +13,7 @@
 
 /* local includes */
 #include "rq_manager_session/rq_manager_session.h"
-#include "rq_manager_session/rq_task.h"
+#include "rq_manager/rq_task.h"
 
 namespace Rq_manager {
 
@@ -48,10 +48,11 @@ namespace Rq_manager {
 		 * return the capability to access the
 		 * dataspace of the Rq_manager
 		 */
-		Genode::Dataspace_capability get_core_rq_ds(core)
+		Genode::Dataspace_capability get_core_rq_ds(int core)
 		{
 			return call<Rpc_get_core_rq_ds>(core);
 		}
+	};
 
 }
 

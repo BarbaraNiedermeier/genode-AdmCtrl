@@ -29,6 +29,9 @@ install_config {
     <start name="rq_manager">
         <resource name="RAM" quantum="4M"/>
     </start>
+#	<start name="rq_client">
+#		<resource name="RAM" quantum="4M"/>
+#	</start>
 </config>}
 
 #

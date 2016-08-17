@@ -16,7 +16,7 @@ namespace Rq_manager {
 	struct Connection : Genode::Connection<Session>, Session_client
 	{
 		Connection() : Genode::Connection<Rq_manager::Session>(session("rq_manager, ram_quota=4096")),
-		               Session_client(cap()) { 
+		               Session_client(cap()) { }
 	};
 
 

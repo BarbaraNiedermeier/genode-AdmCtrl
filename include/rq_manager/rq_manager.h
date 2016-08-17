@@ -45,6 +45,7 @@ namespace Rq_manager {
 //			~Rq_manager();
 
 	};
+
 }
 
 #endif /* _INCLUDE__RQ_MANAGER__RQ_MANAGER_H_ */
