@@ -52,6 +52,7 @@ namespace Rq_manager {
 		{
 			return call<Rpc_get_core_rq_ds>(core);
 		}
+
 	};
 
 }

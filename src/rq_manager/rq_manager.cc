@@ -3,6 +3,8 @@
  * \author Paul Nieleck
  * \date   2016/08/17
  *
+ * This class is manages several run queues
+ * of type Rq_buffer.
  */
 
 #include <base/printf.h>
@@ -15,6 +17,9 @@
 namespace Rq_manager
 {
 
+	/**
+	 *
+	 */
 	int Rq_manager::_init_rqs(int rq_size)
 	{
 
@@ -29,6 +34,9 @@ namespace Rq_manager
 
 	}
 
+	/**
+	 *
+	 */
 	int Rq_manager::_set_ncores(int n)
 	{
 		_num_cores = n;
@@ -36,6 +44,9 @@ namespace Rq_manager
 		return 0;
 	}
 
+	/**
+	 *
+	 */
 	int Rq_manager::enq(int core, Rq_task task)
 	{
 
@@ -49,6 +60,9 @@ namespace Rq_manager
 
 	}
 
+	/**
+	 *
+	 */
 	int Rq_manager::deq(int core, Rq_task **task_ptr)
 	{
 
@@ -61,10 +75,18 @@ namespace Rq_manager
 		return 1;
 	}
 
+	/**
+	 *
+	 */
 	Genode::Dataspace_capability Rq_manager::get_core_rq_ds(int core)
 	{
 		return _rqs[core].get_ds_cap();
 	}
+
+
+	/******************
+	 ** Constructors **
+	 ******************/
 
 	Rq_manager::Rq_manager()
 	{

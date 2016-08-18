@@ -70,11 +70,12 @@ namespace Rq_manager
 			
 			static const int _DEFAULT_SIZE = 100;
 			int _buf_size;                    /* size of the buffer */
-			int _head;                        /* points to the element that has been enqueued first */
-			int _tail;                        /* points to the next free array index */
-			int _window;                      /* number of unallocated objects between tail and head */
+			int *_head = nullptr;             /* points to the element that has been enqueued first */
+			int *_tail = nullptr;             /* points to the next free array index */
+			int *_window = nullptr;           /* number of unallocated objects between tail and head */
 			T *_buf = nullptr;                /* buffer of type T - it's an array */
 			Genode::Dataspace_capability _ds; /* dataspace capability of the shared object */
+			char *_ds_begin;                  /* pointer to the beginning of the shared dataspace */
 
 			void _init_rq_buf(int);  /* helper function for enabling different constructors */
 
@@ -111,9 +112,13 @@ namespace Rq_manager
 		_buf_size = size;
 		_buf = new T[_buf_size]; /* create a new array of size _buf_size */
 
-		_head = 0;
-		_tail = 0;
-		_window = _buf_size;
+		_head = new int;
+		_tail = new int;
+		_window = new int;
+
+		*_head = 0;
+		*_tail = 0;
+		*_window = _buf_size;
 	}
 
 	/**
@@ -128,7 +133,7 @@ namespace Rq_manager
 	{
 
 		_buf_size = size;
-		int ds_size = sizeof(T) * _buf_size;
+		int ds_size = sizeof(int) + (sizeof(T) * _buf_size);
 
 		/* 
 		 * create dataspace capability, i.e. mem is allocated,
@@ -136,11 +141,21 @@ namespace Rq_manager
 		 * allocated mem) to _buf
 		 */
 		_ds = Genode::env()->ram_session()->alloc(ds_size);
-		_buf = Genode::env()->rm_session()->attach(_ds);
+		_ds_begin = Genode::env()->rm_session()->attach(_ds);
 
-		_head = 0;
-		_tail = 0;
-		_window = _buf_size;
+		void *_headp = _ds_begin + (0 * sizeof(int));
+		void *_tailp = _ds_begin + (1 * sizeof(int));
+		void *_windowp = _ds_begin + (2 * sizeof(int));
+		void *_bufp = _ds_begin + (3 * sizeof(int));
+		
+		_head = (int*) _headp;
+		_tail = (int*) _tailp;
+		_window = (int*) _windowp;
+		_buf = (T*) _bufp;
+
+		*_head = 0;
+		*_tail = 0;
+		*_window = _buf_size;
 
 		Genode::printf("New dataspace capability created and attached to address %p.\n", _buf);
 		Genode::printf("The last element of this dataspace is located at address %p.\n", &_buf[_buf_size - 1]);
@@ -170,23 +185,23 @@ namespace Rq_manager
 
 			_set_lock();
 
-			if (_window < 1) {
+			if (*_window < 1) {
 
 				PERR("The buffer is currently full. Can't insert further elements.");
 				_unset_lock();
 
 			} else {
 
-				_buf[_tail] = t; /* insert element at the current free position */
-				PINF("New element inserted to buffer at position %d with pointer %p", _tail, &_buf[_tail]);
-				_tail++; /* move the free position one to the right or wrap around */
+				_buf[*_tail] = t; /* insert element at the current free position */
+				PINF("New element inserted to buffer at position %d with pointer %p", *_tail, &_buf[*_tail]);
+				*_tail += 1; /* move the free position one to the right or wrap around */
 
 				/* check if end of array has been reached */
-				if (_tail >= _buf_size) {
-					_tail = 0; /* wrap around if end of array reached */
+				if (*_tail >= _buf_size) {
+					*_tail = 0; /* wrap around if end of array reached */
 				}
 
-				_window--; /* window of free space got smaller, decrease it */
+				*_window -= 1; /* window of free space got smaller, decrease it */
 				_unset_lock();
 				return 0;
 
@@ -230,7 +245,7 @@ namespace Rq_manager
 
 			_set_lock();
 		
-			if (_window >= _buf_size) {
+			if (*_window >= _buf_size) {
 
 				PINF("The buffer is currently empty. Nothing to dequeue.");
 				*t = nullptr; /* returning null pointer so no old data is used by anyone */
@@ -239,15 +254,15 @@ namespace Rq_manager
 
 			} else {
 
-				*t = &_buf[_head]; /* save address of the element located at the head */
-				_head++;           /* move head one position to the right */
+				*t = &_buf[*_head]; /* save address of the element located at the head */
+				*_head += 1;           /* move head one position to the right */
 
 				/* check if end of array has been reached */
-				if (_head >= _buf_size) {
-					_head = 0; /* wrap around if end of array reached */
+				if (*_head >= _buf_size) {
+					*_head = 0; /* wrap around if end of array reached */
 				}
 
-				_window++;
+				*_window += 1;
 				_unset_lock();
 				return 0;
 			}

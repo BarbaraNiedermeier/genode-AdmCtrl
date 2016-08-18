@@ -24,7 +24,6 @@ namespace Rq_manager {
 //		virtual int deq(int, Rq_task**) = 0;
 		virtual Genode::Dataspace_capability get_core_rq_ds(int) = 0;
 
-
 		/*********************
 		 ** RPC declaration **
 		 *********************/

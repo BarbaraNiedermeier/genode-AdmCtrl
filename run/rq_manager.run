@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer rq_manager }
+build { core init drivers/timer rq_manager rq_client }
 
 create_boot_directory
 
@@ -30,18 +30,17 @@ install_config {
         <resource name="RAM" quantum="4M"/>
 		<provides><service name="Rq_manager"/></provides>
     </start>
+		<start name="rq_client">
+		<resource name="RAM" quantum="4M"/>
+	</start>
 </config>}
 
-
-#	<start name="rq_client">
-#		<resource name="RAM" quantum="4M"/>
-#	</start>
 
 #
 #Boot image
 #
 
-build_boot_image { core init rq_manager ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+build_boot_image { core init rq_manager rq_client ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 
