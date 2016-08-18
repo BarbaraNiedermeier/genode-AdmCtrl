@@ -39,10 +39,10 @@ namespace Rq_manager {
 		 * completely different locations.
 		 * :(
 		 */
-		int deq(int core, Rq_task **task)
-		{
-			return call<Rpc_deq>(core, task);
-		}
+//		int deq(int core, Rq_task **task)
+//		{
+//			return call<Rpc_deq>(core, task);
+//		}
 
 		/* 
 		 * return the capability to access the

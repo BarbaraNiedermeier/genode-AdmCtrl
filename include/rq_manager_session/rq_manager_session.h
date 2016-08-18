@@ -21,7 +21,7 @@ namespace Rq_manager {
 		static const char *service_name() { return "Rq_manager"; }
 
 		virtual int enq(int, Rq_task) = 0;
-		virtual int deq(int, Rq_task**) = 0;
+//		virtual int deq(int, Rq_task**) = 0;
 		virtual Genode::Dataspace_capability get_core_rq_ds(int) = 0;
 
 
@@ -30,11 +30,11 @@ namespace Rq_manager {
 		 *********************/
 
 		GENODE_RPC(Rpc_enq, int, enq, int, Rq_task);
-		GENODE_RPC(Rpc_deq, int, deq, int, Rq_task**);
-		GENODE_RPC(Rpc_get_core_rq_ds, Genode::Dataspace_capability, dataspace, int);
+//		GENODE_RPC(Rpc_deq, int, deq, int, Rq_task**);
+		GENODE_RPC(Rpc_get_core_rq_ds, Genode::Dataspace_capability, get_core_rq_ds, int);
 
 		GENODE_RPC_INTERFACE(Rpc_enq,
-		                     Rpc_deq,
+//		                     Rpc_deq,
 		                     Rpc_get_core_rq_ds);
 
 	};
