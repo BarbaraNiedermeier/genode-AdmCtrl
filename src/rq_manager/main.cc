@@ -71,7 +71,6 @@ namespace Rq_manager
 
 			Session_component *_create_session(const char *args)
 			{
-				PDBG("creating Rq_manager session.");
 				return new (md_alloc()) Session_component(_rqmanager);
 			}
 
@@ -84,7 +83,6 @@ namespace Rq_manager
 			: Genode::Root_component<Session_component>(ep, allocator)
 			{
 				_rqmanager = rqmgmt;
-				PDBG("Creating root component.");
 			}
 	};
 

@@ -10,6 +10,7 @@
 
 #include <base/env.h>
 #include <base/printf.h>
+#include <spec/arm/cpu/atomic.h> /* atomic access to int values on arm CPUs */
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
 #include "rq_manager/rq_buffer.h"
@@ -20,6 +21,7 @@ int main()
 {
 	Rq_manager::Connection rqm;
 	char *_rqbufp = nullptr;    /* char* because char* is only one byte, making addressing easier */
+	int *_lock = nullptr;
 	int *head = nullptr;
 	int *tail = nullptr;
 	int *window = nullptr;
@@ -35,6 +37,7 @@ int main()
 	 * the shared memory starts at the pointer position _rqbufp.
 	 * Every shared memory area consists of the following parts,
 	 * starting at the lowest address:
+	 * - int _lock: lock for mutual exclusive access to Rq_buffer
 	 * - int head: the array position of the oldest element of
 	 *             the rq_buffer - see rq_buffer.h
 	 * - int tail: the array position of the next free position
@@ -49,15 +52,16 @@ int main()
 
 	/* 
 	 * need to set the pointers according to the correct
-	 * positions. Must be void pointers, since _rqbufp is
-	 * of type char*
+	 * positions.
 	 */
-	void *_headp = _rqbufp + (0 * sizeof(int));
-	void *_tailp = _rqbufp + (1 * sizeof(int));
-	void *_windowp = _rqbufp + (2 * sizeof(int));
-	void *_bufp = _rqbufp + (3 * sizeof(int));
+	char *_lockp = _rqbufp + (0 * sizeof(int));
+	char *_headp = _rqbufp + (1 * sizeof(int));
+	char *_tailp = _rqbufp + (2 * sizeof(int));
+	char *_windowp = _rqbufp + (3 * sizeof(int));
+	char *_bufp = _rqbufp + (4 * sizeof(int));
 
 	/* cast the pointers to the correct type */
+	_lock = (int*) _lockp;
 	head = (int*) _headp;
 	tail = (int*) _tailp;
 	window = (int*) _windowp;
@@ -66,10 +70,35 @@ int main()
 	PINF("The tail pointer points to %d", *tail);
 	PINF("The head pointer points to %d", *head);
 	PINF("The window size is %d", *window);
+	PINF("The _lock is set to %d", *_lock);
 
-	/* copy content of buf[3] to variable task */
-	Rq_manager::Rq_task task = buf[3];
-	PINF("Got task with task_id: %d, wcet: %d, valid: %d", task.task_id, task.wcet, task.valid);
+	if (cmpxchg(_lock, false, true)) {
+		PINF("Obtained lock, now set to: %d", *_lock);
+
+		/* copy content of buf[3] to variable task */
+		Rq_manager::Rq_task task = buf[3];
+		PINF("Got task with task_id: %d, wcet: %d, valid: %d", task.task_id, task.wcet, task.valid);
+
+		/* 
+		 * make the element free by moving the pointer for head
+		 * also adjust the window
+		 * CAUTION: it is actually necessary to take care to
+		 *          wrap around the pointer and to make sure
+		 *          that window will not become smaller 0 or
+		 *          larger than the buffer itself. Compare to
+		 *          rq_buffer.h
+		 */
+		(*head)++;
+		(*window)++;
+
+		/* unset the lock again to enable access by other functions */
+		*_lock = false;
+
+	} else {
+		PWRN("Did not obtain lock");
+	}
+
+
 
 	/* access content of buf[4] directly */
 	PINF("Got task with task_id: %d, wcet: %d, valid: %d", buf[4].task_id, buf[4].wcet, buf[4].valid);

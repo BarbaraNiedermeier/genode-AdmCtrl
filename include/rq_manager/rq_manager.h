@@ -28,7 +28,7 @@ namespace Rq_manager {
 		private:
 
 			int _num_cores = 0;
-			Rq_buffer<Rq_task> *_rqs;                 /* array of ring buffers (Rq_buffer with fixed size) */
+			Rq_buffer<Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */
 			
 			int _init_rqs(int);
 			int _set_ncores(int);

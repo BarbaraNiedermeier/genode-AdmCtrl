@@ -58,6 +58,7 @@
 #define _INCLUDE__RQ_MANAGER__RQ_BUFFER_H_
 
 #include <base/printf.h>
+#include <spec/arm/cpu/atomic.h> /* atomic access to int values on arm CPUs */
 
 namespace Rq_manager
 {
@@ -67,22 +68,17 @@ namespace Rq_manager
 	{
 
 		private:
-			
-			static const int _DEFAULT_SIZE = 100;
+
 			int _buf_size;                    /* size of the buffer */
+			int *_lock = nullptr;             /* points to the lock for the Rq_buffer */
 			int *_head = nullptr;             /* points to the element that has been enqueued first */
 			int *_tail = nullptr;             /* points to the next free array index */
 			int *_window = nullptr;           /* number of unallocated objects between tail and head */
 			T *_buf = nullptr;                /* buffer of type T - it's an array */
 			Genode::Dataspace_capability _ds; /* dataspace capability of the shared object */
-			char *_ds_begin;                  /* pointer to the beginning of the shared dataspace */
+			char *_ds_begin = nullptr;        /* pointer to the beginning of the shared dataspace */
 
 			void _init_rq_buf(int);  /* helper function for enabling different constructors */
-
-			bool _lock = false;                   /* mutual exclusion state */
-			bool _check_lock() { return _lock; }; /* returns the lock state */
-			void _set_lock() { _lock = true; };
-			void _unset_lock() { _lock = false; };
 
 		public:
 
@@ -94,32 +90,12 @@ namespace Rq_manager
 			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
 
 			Rq_buffer();
-			Rq_buffer(int);
 
 	};
 
-	/**
-	 * Init variables according to constructor.
-	 * Only executed if constructor with arguments
-	 * had been called.
-	 *
-	 * \param n size of the buffer
-	 */
-	template <typename T>
-	void Rq_buffer<T>::_init_rq_buf(int size)
-	{
-
-		_buf_size = size;
-		_buf = new T[_buf_size]; /* create a new array of size _buf_size */
-
-		_head = new int;
-		_tail = new int;
-		_window = new int;
-
-		*_head = 0;
-		*_tail = 0;
-		*_window = _buf_size;
-	}
+	/**************************
+	 ** Function definitions **
+	 **************************/
 
 	/**
 	 * Init new Rq_buffer in a shared dataspace.
@@ -132,33 +108,45 @@ namespace Rq_manager
 	void Rq_buffer<T>::init_w_shared_ds(int size)
 	{
 
+		/*
+		 * Set the size of the buffer and calculate the memory
+		 * that needs to be aquired for the shared dataspace.
+		 * The shared dataspace will consist of one lock, three
+		 * element-pointers for buffer positions and the actual
+		 * circular buffer of type T.
+		 */
 		_buf_size = size;
-		int ds_size = sizeof(int) + (sizeof(T) * _buf_size);
+		int ds_size = (4 * sizeof(int)) + (_buf_size * sizeof(T));
 
 		/* 
 		 * create dataspace capability, i.e. mem is allocated,
          * and attach the dataspace (the first address of the
-		 * allocated mem) to _buf
+		 * allocated mem) to _ds_begin. Then all the variables
+		 * are set to the respective pointers in memory.
 		 */
 		_ds = Genode::env()->ram_session()->alloc(ds_size);
 		_ds_begin = Genode::env()->rm_session()->attach(_ds);
 
-		void *_headp = _ds_begin + (0 * sizeof(int));
-		void *_tailp = _ds_begin + (1 * sizeof(int));
-		void *_windowp = _ds_begin + (2 * sizeof(int));
-		void *_bufp = _ds_begin + (3 * sizeof(int));
-		
+		char *_lockp = _ds_begin + (0 * sizeof(int));
+		char *_headp = _ds_begin + (1 * sizeof(int));
+		char *_tailp = _ds_begin + (2 * sizeof(int));
+		char *_windowp = _ds_begin + (3 * sizeof(int));
+		char *_bufp = _ds_begin + (4 * sizeof(int));
+
+		_lock = (int*) _lockp;
 		_head = (int*) _headp;
 		_tail = (int*) _tailp;
 		_window = (int*) _windowp;
 		_buf = (T*) _bufp;
 
+		/* 
+		 * set initial values for the lock and the element-pointers
+		 * in an so far empty Rq_buffer.
+		 */
+		*_lock = false;
 		*_head = 0;
 		*_tail = 0;
 		*_window = _buf_size;
-
-		Genode::printf("New dataspace capability created and attached to address %p.\n", _buf);
-		Genode::printf("The last element of this dataspace is located at address %p.\n", &_buf[_buf_size - 1]);
 
 	}
 
@@ -176,19 +164,12 @@ namespace Rq_manager
 	int Rq_buffer<T>::enq(T t)
 	{
 
-		if (_check_lock()) {
-
-			PWRN("Buffer locked");
-			return 2;
-
-		} else {
-
-			_set_lock();
+		if ( Genode::cmpxchg(_lock, false, true) ) {
 
 			if (*_window < 1) {
 
 				PERR("The buffer is currently full. Can't insert further elements.");
-				_unset_lock();
+				*_lock = false;
 
 			} else {
 
@@ -202,10 +183,14 @@ namespace Rq_manager
 				}
 
 				*_window -= 1; /* window of free space got smaller, decrease it */
-				_unset_lock();
+				*_lock = false;
 				return 0;
-
 			}
+
+		} else {
+
+			PWRN("Buffer locked");
+			return 2;
 
 		}
 
@@ -236,20 +221,13 @@ namespace Rq_manager
 	int Rq_buffer<T>::deq(T **t)
 	{
 
-		if (_check_lock()) {
+		if ( Genode::cmpxchg(_lock, false, true) ) {
 
-			PWRN("Buffer locked");
-			return 2;
-
-		} else {
-
-			_set_lock();
-		
 			if (*_window >= _buf_size) {
 
 				PINF("The buffer is currently empty. Nothing to dequeue.");
 				*t = nullptr; /* returning null pointer so no old data is used by anyone */
-				_unset_lock();
+				*_lock = false;
 				return 1;
 
 			} else {
@@ -263,29 +241,28 @@ namespace Rq_manager
 				}
 
 				*_window += 1;
-				_unset_lock();
+				*_lock = false;
 				return 0;
 			}
+		} else {
+			PWRN("Buffer locked");
+			return 2;
 		}
 
 		return 1; /* buffer empty */
 	}
 
+	/*****************
+	 ** Constructor **
+	 *****************/
+
 	template <typename T>
 	Rq_buffer<T>::Rq_buffer()
 	{
 
-		PINF("Constructor called without arguments. Please allocate dataspace by calling init_w_shared_ds(int size).");
+		PINF("This class must be instantiated explicitly by calling the function 'init_w_shared_ds(int size)'.");
+		PINF("If this function is not executed the class will stay in an undefined state.");
 
-	}
-
-	template <typename T>
-	Rq_buffer<T>::Rq_buffer(int size)
-	{
-
-		_init_rq_buf(size);
-
-		PINF("Buffer created, size is %d", _buf_size);
 	}
 }
 
