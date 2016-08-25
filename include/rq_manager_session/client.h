@@ -44,8 +44,16 @@ namespace Rq_manager {
 //			return call<Rpc_deq>(core, task);
 //		}
 
-		/* 
-		 * return the capability to access the
+		/**
+		* Return the number of run queues
+		*/
+		int get_num_rqs()
+		{
+			return call<Rpc_get_num_rqs>();
+		}
+
+		/** 
+		 * Return the capability to access the
 		 * dataspace of the Rq_manager
 		 */
 		Genode::Dataspace_capability get_core_rq_ds(int core)

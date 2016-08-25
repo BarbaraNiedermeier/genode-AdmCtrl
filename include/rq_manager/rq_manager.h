@@ -37,6 +37,7 @@ namespace Rq_manager {
 
 			int enq(int, Rq_task);
 			int deq(int, Rq_task**);
+			int get_num_rqs();
 			Genode::Dataspace_capability get_core_rq_ds(int);
 //			int deq_n(int, int);
 

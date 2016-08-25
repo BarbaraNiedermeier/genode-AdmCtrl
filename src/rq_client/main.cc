@@ -28,6 +28,10 @@ int main()
 	Rq_manager::Rq_task *buf = nullptr;
 	Dataspace_capability dsc;
 
+	/* check for the number of run queues available */
+	int num_rqs = rqm.get_num_rqs();
+	PINF("Number of supplied run queues is: %d", num_rqs);
+
 	/* get dataspace capability for shared dataspace of run queue of core 0 */
 	dsc = rqm.get_core_rq_ds(0);
 	PINF("Got Dataspace_capability :)");

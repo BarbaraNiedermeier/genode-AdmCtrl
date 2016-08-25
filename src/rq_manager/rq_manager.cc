@@ -18,7 +18,13 @@ namespace Rq_manager
 {
 
 	/**
+	 * Initialize the run queues that are used.
 	 *
+	 * \param rq_size: size of the run queues,
+	 *        determines how many task can be
+	 *        held in the queue at once.
+	 *
+	 * \return 0 if finished
 	 */
 	int Rq_manager::_init_rqs(int rq_size)
 	{
@@ -35,7 +41,13 @@ namespace Rq_manager
 	}
 
 	/**
+	 * Set the number of system cores that are used
+	 * for scheduling, i.e. set the number of run
+	 * queues to be available.
 	 *
+	 * \param n: number of cores
+	 *
+	 * \return 0 if finished
 	 */
 	int Rq_manager::_set_ncores(int n)
 	{
@@ -45,14 +57,20 @@ namespace Rq_manager
 	}
 
 	/**
+	 * Enqueue a new Task in the buffer
 	 *
+	 * \param core: which core/run queue the
+	 *        task should be added to
+	 * \param task: the task that should be added
+	 *
+	 * \return  0 if successful
+	 *         >0 in any other case
 	 */
 	int Rq_manager::enq(int core, Rq_task task)
 	{
 
 		if (core < _num_cores) {
 			int success = _rqs[core].enq(task);
-			//PINF("Inserted task to core %d", core);
 			return success;
 		}
 
@@ -61,7 +79,12 @@ namespace Rq_manager
 	}
 
 	/**
+	 * Dequeue a task from a given run queue
 	 *
+	 * \param core: specify the run queue from which
+	 *        the element should be dequeued
+	 * \param **task_ptr: pointer that will be set
+	 *        to the location where the task is stored
 	 */
 	int Rq_manager::deq(int core, Rq_task **task_ptr)
 	{
@@ -73,6 +96,14 @@ namespace Rq_manager
 		}
 
 		return 1;
+	}
+
+	/**
+	 * Return the number of run queues
+	 */
+	int Rq_manager::get_num_rqs()
+	{
+		return _num_cores;
 	}
 
 	/**

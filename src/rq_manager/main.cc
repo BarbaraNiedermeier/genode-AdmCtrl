@@ -46,6 +46,11 @@ namespace Rq_manager
 //				return 0;
 //			}
 
+			int get_num_rqs()
+			{
+				return _rqmanager->get_num_rqs();
+			}
+
 			Genode::Dataspace_capability get_core_rq_ds(int core)
 			{
 				return _rqmanager->get_core_rq_ds(core);
