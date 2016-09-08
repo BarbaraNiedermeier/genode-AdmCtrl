@@ -11,11 +11,20 @@
 namespace Rq_manager
 {
 
+	enum class Task_class { hi, lo };
+
+	enum class Task_strategy { priority, deadline, deadprio };
+
 	struct Rq_task
 	{
 
 			int task_id;
-			int wcet;
+			Task_class task_class;
+			Task_strategy task_strategy;
+			float deadline;
+			float wcet;
+			float inter_arrival;
+			int prio;
 			bool valid;
 
 	};
