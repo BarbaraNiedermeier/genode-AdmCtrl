@@ -12,7 +12,8 @@
 #ifndef _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_
 #define _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_
 
-#include "rq_manager/rq_manager.h"
+#include "rq_manager_session/client.h"
+#include "rq_manager_session/connection.h"
 
 namespace Sched_controller
 {
@@ -23,9 +24,15 @@ namespace Sched_controller
 		private:
 
 			Rq_manager::Connection rq_manager;
+			int num_rqs;
 
-	}
+		public:
+
+			Sched_controller();
+			~Sched_controller();
+
+	};
 
 }
 
-#endif /* _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_ *
+#endif /* _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_ */

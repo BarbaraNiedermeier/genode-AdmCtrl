@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer sched_controller sched_tmonitor }
+build { core init drivers/timer sched_controller rq_manager }
 
 create_boot_directory
 
@@ -18,7 +18,7 @@ install_config {
         <service name="ROM"/>
         <service name="CPU"/>
         <service name="SIGNAL"/>
-	<service name="CAP"/>
+		<service name="CAP"/>
         <service name="IO_MEM"/>
         <service name="IO_PORT"/>
         <service name="IRQ"/>
@@ -26,16 +26,17 @@ install_config {
     <default-route>
         <any-service> <parent/> <any-child/> </any-service>
     </default-route>
-    <start name="sched_controller">
-        <resource name="RAM" quantum="4M"/>
-        <provides><service name="Sched_controller"/></provides>
-    </start>
     <start name="timer">
         <resource name="RAM" quantum="1M"/>
         <provides><service name="Timer"/></provides>
     </start>
-    <start name="sched_tmonitor">
-        <resource name="RAM" quantum="1M"/>
+    <start name="rq_manager">
+        <resource name="RAM" quantum="4M"/>
+		<provides><service name="Rq_manager"/></provides>
+    </start>
+    <start name="sched_controller">
+        <resource name="RAM" quantum="4M"/>
+        <provides><service name="Sched_controller"/></provides>
     </start>
 </config>}
 
@@ -43,7 +44,7 @@ install_config {
 #Boot image
 #
 
-build_boot_image { core init timer sched_controller sched_tmonitor }
+build_boot_image { core init timer rq_manager sched_controller ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 

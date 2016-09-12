@@ -8,8 +8,8 @@
 /* global includes */
 #include <base/env.h>
 #include <base/printf.h>
-#include <base/sleep.h>
 #include <base/rpc_server.h>
+#include <base/sleep.h>
 #include <cap_session/connection.h>
 #include <root/component.h>
 
@@ -98,32 +98,33 @@ using namespace Genode;
 int main()
 {
 
-	/* testing the Rq_buffer */
-	Rq_manager::Rq_task task1 = {111, 1000, true};
-	Rq_manager::Rq_task task2 = {222, 100, false};
-	Rq_manager::Rq_task task3 = {333, 1234, true};
-	Rq_manager::Rq_task task4 = {444, 4321, false};
-	Rq_manager::Rq_task task5 = {555, 4524, true};
-	Rq_manager::Rq_task task6 = {666, 5875, false};
-	Rq_manager::Rq_task *deq_task;
-
 	PINF("Now we will create several rqs to work with!");
 	Rq_manager::Rq_manager mgmt (4);
-	mgmt.enq(0, task1);
-	mgmt.enq(0, task2);
-	mgmt.enq(0, task3);
-	mgmt.enq(0, task4);
-	mgmt.enq(0, task5);
 
-	for (int i = 0; i < 50; i++) {
-		mgmt.enq(1, task6);
-	}
-
-	PINF("Starting to dequeue some task");
-	mgmt.deq(0, &deq_task);
-	PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
-	mgmt.deq(0, &deq_task);
-    PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
+//	/* testing the Rq_buffer */
+//	Rq_manager::Rq_task task1 = {111, 1000, true};
+//	Rq_manager::Rq_task task2 = {222, 100, false};
+//	Rq_manager::Rq_task task3 = {333, 1234, true};
+//	Rq_manager::Rq_task task4 = {444, 4321, false};
+//	Rq_manager::Rq_task task5 = {555, 4524, true};
+//	Rq_manager::Rq_task task6 = {666, 5875, false};
+//	Rq_manager::Rq_task *deq_task;
+//
+//	mgmt.enq(0, task1);
+//	mgmt.enq(0, task2);
+//	mgmt.enq(0, task3);
+//	mgmt.enq(0, task4);
+//	mgmt.enq(0, task5);
+//
+//	for (int i = 0; i < 50; i++) {
+//		mgmt.enq(1, task6);
+//	}
+//
+//	PINF("Starting to dequeue some task");
+//	mgmt.deq(0, &deq_task);
+//	PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
+//	mgmt.deq(0, &deq_task);
+//    PINF("Got task with task_id: %d, wcet: %d, valid: %d", deq_task->task_id, deq_task->wcet, deq_task->valid);
 
 
 	/****************

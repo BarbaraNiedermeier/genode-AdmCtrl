@@ -5,12 +5,17 @@
  *
  */
 
+/* global includes */
+#include <base/env.h>
 #include <base/printf.h>
-#include <sched_controller_session/sched_controller_session.h>
 #include <base/rpc_server.h>
-#include <root/component.h>
-#include <cap_session/connection.h>
 #include <base/sleep.h>
+#include <cap_session/connection.h>
+#include <root/component.h>
+
+/* local includes */
+#include <sched_controller_session/sched_controller_session.h>
+#include <sched_controller/sched_controller.h>
 
 namespace Sched_controller {
 
@@ -25,7 +30,8 @@ namespace Sched_controller {
 	{
 		protected:
 
-			Sched_controller::Session_component *_create_session(const char *args)
+			//Sched_controller::Session_component *_create_session(const char *args)
+			Session_component *_create_session(const char *args)
 			{
 				return new(md_alloc()) Session_component();
 			}
@@ -47,6 +53,9 @@ using namespace Genode;
 
 int main(void)
 {
+
+	Sched_controller::Sched_controller ctr;
+
 	Cap_connection cap;
 
 	static Sliced_heap sliced_heap(env()->ram_session(),

@@ -25,17 +25,23 @@ namespace Sched_controller
 		protected:
 
 			int id;
-			Core_state core_state;
+			Pcore_state pcore_state;
+			std::vector<int> rqs;
 
 		public:
 
 			float get_utilization();
+			int allocate_rq(int);
+			int deallocte_rq(int);
+			std::vector<int> get_rqs();
 
-			virtual Core_state get_core_state = 0;
+			virtual Pcore_state get_pcore_state = 0;
 			virtual float get_clockspead() = 0;
 
-			virtual int set_core_state(Core_state) = 0;
+			virtual int set_pcore_state(pcore_state) = 0;
 			virtual float set_clockspeed(float) = 0;
+
+			Pcore(int);
 
 	};
 
