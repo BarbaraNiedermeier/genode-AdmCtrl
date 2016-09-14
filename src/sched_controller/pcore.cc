@@ -5,6 +5,7 @@
  */
 
 #include <base/printf.h>
+#include <vector>
 
 #include "sched_controller/pcore.h"
 #include "rq_manager/rq_buffer.h"
@@ -13,7 +14,7 @@
 namespace Sched_controller
 {
 
-	int allocate_rq(int rq)
+	int Pcore::allocate_rq(int rq)
 	{
 
 		rqs.push_back(rq);
@@ -21,11 +22,11 @@ namespace Sched_controller
 
 	}
 
-	int deallocate_rq(int rq)
+	int Pcore::deallocate_rq(int rq)
 	{
-		for (int i = 0; i < rqs.size; i++) {
+		for (unsigned int i = 0; i < rqs.size(); i++) {
 			if (rqs[i] == rq) {
-				rqs.erase(i);
+				rqs.erase(rqs.begin()+i);
 				return rq;
 			}
 		}
@@ -33,22 +34,28 @@ namespace Sched_controller
 		return -1;
 	}
 
-	std::vector<int> get_rqs()
+	std::vector<int> Pcore::get_rqs()
 	{
 
 		return rqs;
 
 	}
 
+	int Pcore::set_id(int core_id)
+	{
+		id = core_id;
+		return 0;
+	}
+
 	/******************
 	 ** Constructors **
 	 ******************/
 
-	Pcore::Pcore(int core_id)
+	Pcore::Pcore()
 	{
-		id = core_id
-		rqs = new vector<int>;
-		//pcore_state = Pcore_state::active;
+		//id = core_id;
+		//rqs = new std::vector<int>;
+		pcore_state = Pcore_state::active;
 	}
 
 }

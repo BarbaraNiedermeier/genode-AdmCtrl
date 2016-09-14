@@ -11,6 +11,8 @@
 #ifndef _INCLUDE__SCHED_CONTROLLER__PCORE_H_
 #define _INCLUDE__SCHED_CONTROLLER__PCORE_H_
 
+#include <vector>
+
 #include "rq_manager/rq_buffer.h"
 #include "rq_manager/rq_task.h"
 
@@ -32,16 +34,17 @@ namespace Sched_controller
 
 			float get_utilization();
 			int allocate_rq(int);
-			int deallocte_rq(int);
+			int deallocate_rq(int);
 			std::vector<int> get_rqs();
+			int set_id(int);
 
-			virtual Pcore_state get_pcore_state = 0;
-			virtual float get_clockspead() = 0;
+			//virtual Pcore_state get_pcore_state = 0;
+			//virtual float get_clockspead() = 0;
 
-			virtual int set_pcore_state(pcore_state) = 0;
-			virtual float set_clockspeed(float) = 0;
+			//virtual int set_pcore_state(pcore_state) = 0;
+			//virtual float set_clockspeed(float) = 0;
 
-			Pcore(int);
+			Pcore();
 
 	};
 

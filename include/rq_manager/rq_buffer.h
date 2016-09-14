@@ -57,6 +57,7 @@
 #ifndef _INCLUDE__RQ_MANAGER__RQ_BUFFER_H_
 #define _INCLUDE__RQ_MANAGER__RQ_BUFFER_H_
 
+#include <base/env.h>
 #include <base/printf.h>
 #include <spec/arm/cpu/atomic.h> /* atomic access to int values on arm CPUs */
 
