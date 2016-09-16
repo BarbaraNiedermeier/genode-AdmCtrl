@@ -12,6 +12,8 @@
 #include <base/rpc_client.h>
 #include <base/printf.h>
 
+#include "rq_manager/rq_task.h"
+
 namespace Sched_controller {
 
 	struct Session_client : Genode::Rpc_client<Session>
@@ -24,6 +26,12 @@ namespace Sched_controller {
 			PDBG("Calling Rpc-Interface function to get init status of sched_monitor.");
 			call<Rpc_get_init_status>();
 		}
+
+		void new_task(Rq_manager::Rq_task task)
+		{
+			call<Rpc_new_task>(task);
+		}
+
 	};
 }
 

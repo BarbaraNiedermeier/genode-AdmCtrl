@@ -10,11 +10,13 @@
 #include <base/sleep.h>
 
 #include "rq_manager/rq_task.h"
+#include "sched_controller_session/connection.h"
 
 int main()
 {
 
 	static Timer::Connection _timer;
+	static Sched_controller::Connection _schedcontrlr;
 
 	std::default_random_engine generator;
 	std::uniform_int_distribution<int> distribution(1000,9999);
@@ -47,6 +49,8 @@ int main()
 		_timer.msleep(rand);
 
 		PINF("Task created with id: %d", task.task_id);
+
+		_schedcontrlr.new_task(task);
 
 	}
 

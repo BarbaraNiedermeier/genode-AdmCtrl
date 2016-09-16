@@ -11,6 +11,8 @@
 #include <session/session.h>
 #include <base/rpc.h>
 
+#include "rq_manager/rq_task.h"
+
 namespace Sched_controller {
 
 	struct Session : Genode::Session
@@ -18,9 +20,12 @@ namespace Sched_controller {
 		static const char *service_name() { return "Sched_controller"; }
 
 		virtual void get_init_status() = 0;
+		virtual void new_task(Rq_manager::Rq_task) = 0;
 
 		GENODE_RPC(Rpc_get_init_status, void, get_init_status);
-		GENODE_RPC_INTERFACE(Rpc_get_init_status);
+		GENODE_RPC(Rpc_new_task, void, new_task, Rq_manager::Rq_task);
+		GENODE_RPC_INTERFACE(Rpc_get_init_status,
+							 Rpc_new_task);
 	};
 }
 
