@@ -6,6 +6,7 @@
  */
 
 #include "sched_controller/sched_controller.h"
+#include "sched_controller/task_allocator.h"
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
 
@@ -50,6 +51,21 @@ namespace Sched_controller {
 		_num_pcores = 4;
 
 		return 0;
+	}
+
+	/**
+	 * Call the Task_allocator to allocate newly arriving tasks
+	 * (comming in via the respective RPC-call) to a sufficient
+	 * pcore/rq_buffer.
+	 *
+	 * \param newly arriving task
+	 */
+	void Sched_controller::allocate_task(Rq_manager::Rq_task task)
+	{
+
+		PINF("Now we'll allocate Task with id %d", task.task_id);
+		Task_allocator::allocate_task(&task);
+
 	}
 
 	/******************

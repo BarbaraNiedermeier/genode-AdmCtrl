@@ -12,39 +12,42 @@
 #ifndef _INCLUDE__SCHED_CONTROLLER__TASK_ALLOCATOR_H_
 #define _INCLUDE__SCHED_CONTROLLER__TASK_ALLOCATOR_H_
 
+#include "sched_controller/pcore.h"
+
 namespace Sched_controller {
 
-	static class Task_allocator
+	class Task_allocator
 	{
 
 		private:
-			int check_task_consistency(Rq_task);
-			int get_dependent_core(Rq_task, Core*);
+			//int check_task_consistency(Rq_manager::Rq_task);
+			//int get_dependent_core(Rq_manager::Rq_task, Pcore*);
 
 		public:
-			virtual int enqueue_task(Rq_task, Core*) = 0;
+			//virtual int allocate_task(Rq_manager::Rq_task, Pcore*) = 0;
+			static void allocate_task(Rq_manager::Rq_task*);
 
 	};
-
-	static class Task_allocator_LO : Task_allocator
-	{
-
-		private:
-			int get_available_cores(Core*);
-			int get_inactive_cores(Core*);
-
-		public:
-			int enqueue_task(Rq_task, Core*);
-
-	};
-
-	static class Task_allocator_HI : Task_allocator
-	{
-
-		public:
-			int enqueue_task(Rq_task, Core) {return 1;};
-
-	};
+//
+//	static class Task_allocator_lo : Task_allocator
+//	{
+//
+//		private:
+//			int get_available_cores(Pcore*);
+//			int get_inactive_cores(Pcore*);
+//
+//		public:
+//			int allocate_task(Rq_manager::Rq_task, Pcore*);
+//
+//	};
+//
+//	static class Task_allocator_hi : Task_allocator
+//	{
+//
+//		public:
+//			int allocate_task(Rq_manager::Rq_task, Pcore) {return 1;};
+//
+//	};
 
 }
 

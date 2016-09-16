@@ -22,34 +22,56 @@ namespace Sched_controller {
 
 	struct Session_component : Genode::Rpc_object<Session>
 	{
-		void get_init_status() {
-			PINF("sched_controller is initialized");
-		}
 
-		void new_task(Rq_manager::Rq_task task)
-		{
-			PINF("Received new task with id: %d", task.task_id);
-		}
+		private:
+
+			Sched_controller *_ctr = nullptr;
+
+		public:
+
+			void get_init_status() {
+				PINF("sched_controller is initialized");
+			}
+
+			void new_task(Rq_manager::Rq_task task)
+			{
+				PINF("Received new task with id: %d", task.task_id);
+				_ctr->allocate_task(task);
+			}
+
+			/* Session_component constructor enhanced by Sched_controller object */
+			Session_component(Sched_controller *ctr)
+			: Genode::Rpc_object<Session>()
+			{
+				_ctr = ctr;
+			}
 
 	};
 
 	class Root_component : public Genode::Root_component<Session_component>
 	{
+
+		private:
+
+			Sched_controller *_ctr = nullptr;
+
 		protected:
 
 			//Sched_controller::Session_component *_create_session(const char *args)
 			Session_component *_create_session(const char *args)
 			{
-				return new(md_alloc()) Session_component();
+				return new(md_alloc()) Session_component(_ctr);
 			}
 
 		public:
 
 			Root_component(Genode::Rpc_entrypoint *ep,
-			               Genode::Allocator *allocator)
+			               Genode::Allocator *allocator,
+						   Sched_controller *ctr)
 			: Genode::Root_component<Session_component>(ep, allocator)
 			{
 				PDBG("Creating root component");
+				_ctr = ctr;
 			}
 
 	};
@@ -71,7 +93,7 @@ int main(void)
 	enum { STACK_SIZE = 4096 };
 	static Rpc_entrypoint ep(&cap, STACK_SIZE, "sched_controller_ep");
 
-	static Sched_controller::Root_component sched_controller_root(&ep, &sliced_heap);
+	static Sched_controller::Root_component sched_controller_root(&ep, &sliced_heap, &ctr);
 	env()->parent()->announce(ep.manage(&sched_controller_root));
 
 	sleep_forever();

@@ -36,6 +36,9 @@ namespace Sched_controller
 
 		public:
 
+			/* for testing purpose only */
+			void allocate_task(Rq_manager::Rq_task);
+
 			Sched_controller();
 			~Sched_controller();
 
