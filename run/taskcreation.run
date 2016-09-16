@@ -1,0 +1,54 @@
+#
+# Build
+#
+
+build { core init drivers/timer sched_controller rq_manager test_taskcreator }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+    <parent-provides>
+        <service name="LOG"/>
+        <service name="RM"/>
+        <service name="ROM"/>
+        <service name="CPU"/>
+        <service name="SIGNAL"/>
+		<service name="CAP"/>
+        <service name="IO_MEM"/>
+        <service name="IO_PORT"/>
+        <service name="IRQ"/>
+    </parent-provides>
+    <default-route>
+        <any-service> <parent/> <any-child/> </any-service>
+    </default-route>
+    <start name="timer">
+        <resource name="RAM" quantum="1M"/>
+        <provides><service name="Timer"/></provides>
+    </start>
+    <start name="rq_manager">
+        <resource name="RAM" quantum="4M"/>
+		<provides><service name="Rq_manager"/></provides>
+    </start>
+    <start name="sched_controller">
+        <resource name="RAM" quantum="4M"/>
+        <provides><service name="Sched_controller"/></provides>
+    </start>
+	    <start name="test_taskcreator">
+        <resource name="RAM" quantum="4M"/>
+    </start>
+</config>}
+
+#
+#Boot image
+#
+
+build_boot_image { core init timer rq_manager sched_controller test_taskcreator ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+
+append qemu_args "-smp 4 -nographic "
+
+run_genode_until forever
