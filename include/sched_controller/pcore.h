@@ -12,6 +12,7 @@
 #define _INCLUDE__SCHED_CONTROLLER__PCORE_H_
 
 #include <vector>
+#include <forward_list>
 
 #include "rq_manager/rq_buffer.h"
 #include "rq_manager/rq_task.h"
@@ -23,6 +24,10 @@ namespace Sched_controller
 
 	class Pcore
 	{
+
+		private:
+			static std::forward_list<Pcore*> _cores;
+			Rq_manager::Task_class _pcore_class;
 
 		protected:
 
@@ -37,6 +42,11 @@ namespace Sched_controller
 			int deallocate_rq(int);
 			std::vector<int> get_rqs();
 			int set_id(int);
+			int get_id();
+			Rq_manager::Task_class get_class();
+			int set_class(Rq_manager::Task_class);
+
+			static std::forward_list<Pcore*> get_pcores();
 
 			//virtual Pcore_state get_pcore_state = 0;
 			//virtual float get_clockspead() = 0;
@@ -45,6 +55,7 @@ namespace Sched_controller
 			//virtual float set_clockspeed(float) = 0;
 
 			Pcore();
+			~Pcore();
 
 	};
 

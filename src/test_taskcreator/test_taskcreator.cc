@@ -31,7 +31,7 @@ int main()
 		if (rand % 2 == 0) {
 			task.task_class = Rq_manager::Task_class::hi;
 		} else {
-			task.task_class = Rq_manager::Task_class::hi;
+			task.task_class = Rq_manager::Task_class::lo;
 		}
 		if (rand % 3 == 0) {
 			task.task_strategy = Rq_manager::Task_strategy::priority;
