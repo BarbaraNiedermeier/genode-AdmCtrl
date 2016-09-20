@@ -33,18 +33,11 @@ namespace Sched_controller
 
 			int id;
 			Pcore_state pcore_state;
-			std::vector<int> rqs;
 
 		public:
 
-			float get_utilization();
-			int allocate_rq(int);
-			int deallocate_rq(int);
-			std::vector<int> get_rqs();
 			int set_id(int);
 			int get_id();
-			Rq_manager::Task_class get_class();
-			int set_class(Rq_manager::Task_class);
 
 			static std::forward_list<Pcore*> get_pcores();
 
