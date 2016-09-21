@@ -13,6 +13,7 @@
 #define _INCLUDE__SCHED_CONTROLLER__TASK_ALLOCATOR_H_
 
 #include "sched_controller/pcore.h"
+#include "sched_controller/sched_controller.h"
 
 namespace Sched_controller {
 
@@ -25,7 +26,7 @@ namespace Sched_controller {
 
 		public:
 			//virtual int allocate_task(Rq_manager::Rq_task, Pcore*) = 0;
-			static void allocate_task(Rq_manager::Rq_task*);
+			static void allocate_task(Sched_controller*, Rq_manager::Rq_task*);
 
 	};
 //

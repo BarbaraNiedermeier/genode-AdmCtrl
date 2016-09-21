@@ -68,11 +68,14 @@ namespace Rq_manager
 	 */
 	int Rq_manager::enq(int core, Rq_task task)
 	{
+		PDBG("Task is enqueued now.");
 
 		if (core < _num_cores) {
 			int success = _rqs[core].enq(task);
-			return success;
+			//return success;
+			return 1234;
 		}
+
 
 		return 1;
 

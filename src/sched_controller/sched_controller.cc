@@ -5,6 +5,12 @@
  *
  */
 
+/* for testing in get_utilization   */
+#include <random>
+#include <timer_session/connection.h>
+#include <string>
+/* ******************************** */
+
 #include <unordered_map>
 #include <base/printf.h>
 
@@ -97,8 +103,62 @@ namespace Sched_controller {
 	{
 
 		PINF("Now we'll allocate Task with id %d", task.task_id);
-		Task_allocator::allocate_task(&task);
+		Task_allocator::allocate_task(this, &task);
 
+	}
+
+	void Sched_controller::task_to_rq(int rq, Rq_manager::Rq_task *task) {
+		int status = _rq_manager.enq(rq, *task);
+		PDBG("%d", status);
+		return;
+	}
+
+	/**
+	 *
+	 */
+	int Sched_controller::get_num_rqs()
+	{
+		return _num_rqs;
+	}
+
+	/**
+	 * Return the run queues that support the requested task_class
+	 * and task_strategy.
+	 *
+	 * \param
+	 *
+	 */
+	void Sched_controller::which_runqueues(std::vector<Runqueue> *rq, Rq_manager::Task_class task_class, Rq_manager::Task_strategy task_strategy)
+	{
+		//rq = new std::vector<Runqueue>;
+		rq->reserve(_num_rqs);
+		for (int i = 0; i < _num_rqs; i++) {
+			if (_runqueue[i]._task_class == task_class) {
+				if (_runqueue[i]._task_strategy == task_strategy) {
+					rq->push_back(_runqueue[i]);
+				}
+			}
+		}
+
+		return;
+	}
+
+	double Sched_controller::get_utilization(int rq) {
+		/* This is a mock, only for testing purposes */
+
+		Timer::Connection _timer;
+		unsigned long time_ms = _timer.elapsed_ms();
+
+		std::string seed_str = std::to_string(time_ms);
+		PINF("The elapsed time for the seed is: %ld", time_ms);
+
+		std::default_random_engine generator;
+		std::seed_seq seed1 (seed_str.begin(),seed_str.end());
+
+		generator.seed(seed1);
+		std::uniform_real_distribution<double> distribution(0.0,1.0);
+
+		return distribution(generator);
 	}
 
 	/******************

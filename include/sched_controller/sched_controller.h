@@ -13,6 +13,7 @@
 #define _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_
 
 #include <unordered_map>
+#include <vector>
 
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
@@ -37,9 +38,9 @@ namespace Sched_controller
 			Rq_manager::Connection _rq_manager;
 			int _num_rqs = 0;
 			int _num_pcores = 0;
-			Pcore *_pcore;
-			Runqueue *_runqueue;
-			std::unordered_multimap<Pcore*, Runqueue*> _pcore_rq_association;	/* which pcore hosts which rq */
+			Pcore *_pcore;                                                    /* Array of pcores */
+			Runqueue *_runqueue;                                              /* Array of runqueues */
+			std::unordered_multimap<Pcore*, Runqueue*> _pcore_rq_association; /* which pcore hosts which rq */
 
 			int _set_num_pcores();
 			int _init_pcores();
@@ -48,7 +49,10 @@ namespace Sched_controller
 		public:
 
 			void allocate_task(Rq_manager::Rq_task);
-			void which_runqueues(Runqueue*, Rq_manager::Task_class, Rq_manager::Task_strategy);
+			void task_to_rq(int, Rq_manager::Rq_task*);
+			int get_num_rqs();
+			void which_runqueues(std::vector<Runqueue>*, Rq_manager::Task_class, Rq_manager::Task_strategy);
+			double get_utilization(int);
 
 
 			Sched_controller();

@@ -9,11 +9,17 @@
 #include <base/printf.h>
 
 #include "sched_controller/task_allocator.h"
+#include "sched_controller/sched_controller.h"
 #include "rq_manager/rq_task.h"
+
+/* for testing */
+#include "rq_manager_session/client.h"
+#include "rq_manager_session/connection.h"
+/* */
 
 namespace Sched_controller {
 
-	void Task_allocator::allocate_task(Rq_manager::Rq_task *task)
+	void Task_allocator::allocate_task(Sched_controller *sc, Rq_manager::Rq_task *task)
 	{
 		PINF("Task allocator got the Task with id: %d", task->task_id);
 
@@ -21,38 +27,45 @@ namespace Sched_controller {
 		/* how to find out which rqs are available??? */
 		if (task->task_class == Rq_manager::Task_class::hi) {
 			PINF("This is a high task and we do nothing!");
+			return;
+		}
+
+		PINF("This is a lo task, going to allocate it.");
+
+		/* Now we need to see if there exists any run queue that
+		 * already supports this kind of task
+		 */
+		std::vector<Runqueue> rq;
+		sc->which_runqueues(&rq, task->task_class, task->task_strategy);
+
+		int num_elements_in_rq = rq.size();
+		PINF("So now we know that there are %d runqueus that we can allocate the task to", num_elements_in_rq);
+
+		double util = 1.0;
+		int lowest_util_rq = -1;
+
+		if (rq.size() == 0) {
+			//check for empty pcore and put the task there.
 		} else {
+			//check which runque has the lowest utilization and put it there.
+			for (auto it = rq.begin(); it != rq.end(); it++) {
+				double util_comp = sc->get_utilization((*it).rq_buffer);
+				PINF("The utilization of run queue %d is %d and the lowest utilization is currently %d", (*it).rq_buffer, (int) (100 * util_comp), (int) (100 * util));
+				if (util_comp < util) {
+					lowest_util_rq = (*it).rq_buffer;
+					util = util_comp;
+					PINF("Setting lowest_util_rq to %d", lowest_util_rq);
+				}
 
-			PINF("This is a lo task, going to allocate it.");
+			}
 
-//			std::forward_list<Pcore*> _cores = Pcore::get_pcores();
-//
-//			/* we go through all cores to check if we can schedule the task on one
-//			 * of them.
-//			 */
-//			for (auto it = _cores.begin(); it != _cores.end(); ++it) {
-//				PINF("Task allocator is aware of pcore %d", (*it)->get_id());
-//				
-//				if ((*it)->get_class() != task->task_class) {
-//
-//					PINF("This pcore contains the wrong task class");
-//					continue;
-//
-//				} 
-//
-//				PINF("This pcore contains rqs of task class %d", (*it)->get_class());
-//				std::vector<int> pcore_rqs = (*it)->get_rqs();
-//				
-//				/* If the pcore currently has no run queue attached, we can use it,
-//				 * if there is no other run queue/pcore that can host the task.
-//				 */
-//				if (pcore_rqs.empty()) {
-//					continue; //currently we just skip this and go on with non-empty pcores.
-//				}
-//
-//				/* On all other run queues we have to check if they are using the
-//				 * scheduling algorithm strategy that the task is intended for.
-//				 */
+			PINF("The Runqueue with the lowest utilization is: %d", lowest_util_rq);
+			
+			sc->task_to_rq(lowest_util_rq, task);
+			//Rq_manager::Connection _rq_manager;
+			//int status = -666;
+			//status = _rq_manager.enq(lowest_util_rq, *task);
+			//PINF("Enqueued status of _rq_manager.enq returned: %d", status);
 
 		}
 
