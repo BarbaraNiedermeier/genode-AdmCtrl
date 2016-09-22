@@ -36,7 +36,8 @@ namespace Rq_manager
 			{
 				// here must go some real function
 				// return Rq_manager::enq(core, task)
-				return 0;
+				PDBG("Here we are...");
+				return _rqmanager->enq(core, task);
 			}
 
 //			int deq(int core, Rq_task **task)

@@ -11,6 +11,7 @@
 #include <string>
 /* ******************************** */
 
+#include <forward_list>
 #include <unordered_map>
 #include <base/printf.h>
 
@@ -108,6 +109,7 @@ namespace Sched_controller {
 	}
 
 	void Sched_controller::task_to_rq(int rq, Rq_manager::Rq_task *task) {
+		PDBG("Number of RQs: %d", _rq_manager.get_num_rqs());
 		int status = _rq_manager.enq(rq, *task);
 		PDBG("%d", status);
 		return;
@@ -130,7 +132,6 @@ namespace Sched_controller {
 	 */
 	void Sched_controller::which_runqueues(std::vector<Runqueue> *rq, Rq_manager::Task_class task_class, Rq_manager::Task_strategy task_strategy)
 	{
-		//rq = new std::vector<Runqueue>;
 		rq->reserve(_num_rqs);
 		for (int i = 0; i < _num_rqs; i++) {
 			if (_runqueue[i]._task_class == task_class) {
@@ -143,6 +144,15 @@ namespace Sched_controller {
 		return;
 	}
 
+	/**
+	 * Computes the utilization of the requested runqueue.
+	 *
+	 * \return Utilization of the runqueue. The utilization
+	 *         should usually be between 0 and 1. In cases
+	 *         where too many tasks are scheduled on one
+	 *         core/runqueu, the utilization might also be
+	 *         > 1.
+	 */
 	double Sched_controller::get_utilization(int rq) {
 		/* This is a mock, only for testing purposes */
 
@@ -159,6 +169,36 @@ namespace Sched_controller {
 		std::uniform_real_distribution<double> distribution(0.0,1.0);
 
 		return distribution(generator);
+	}
+
+	/**
+	 * Get a list of pcores that are assigned no runqueues
+	 *
+	 * \return forward_list containing pointers to the pcores
+	 */
+	std::forward_list<Pcore*> Sched_controller::get_unused_cores()
+	{
+
+		/*
+		 * TODO: Find a way to erase elements directly form pcores
+		 *       instead of creating another unused_pcores list and
+		 *       pushing elemnts in there.
+		 */
+		std::forward_list<Pcore*> pcores = Pcore::get_pcores();
+		std::forward_list<Pcore*> unused_pcores;
+
+		for (auto it = pcores.begin(); it != pcores.end(); it++) {
+			/* 
+			 * has the pcore any runqueues associated? If it hasn't, it can not
+			 * be found in the _pcore_rq_association unordered_multimap
+			 */
+			if (_pcore_rq_association.find(*it) == _pcore_rq_association.end()) {
+				PDBG("Pcore has no RQ, it claims...");
+				unused_pcores.push_front(*it);
+			}
+		}
+
+		return unused_pcores;
 	}
 
 	/******************
@@ -181,6 +221,9 @@ namespace Sched_controller {
 		 * After we know about our run queues, we will assign them to the pcores.
 		 * Currently we have 4 run queues and 4 pcores. Hence we can make a fixed
 		 * assignement.
+		 *
+		 * ATTENTION: This implementation is only for testing until run queues can
+		 *            be created dynamically!
 		 */
 		for (int i = 0; i < _num_rqs; i++) {
 			std::pair<Pcore*, Runqueue*> _pcore_rq_pair (_pcore + i, _runqueue + i);

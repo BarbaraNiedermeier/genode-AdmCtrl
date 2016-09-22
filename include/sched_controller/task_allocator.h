@@ -5,8 +5,8 @@
  *
  * The Task_allocator is responsible for
  * allocating newly arriving tasks to a
- * core, according to the class and scheduling
- * type of the task.
+ * run queue, according to the class and 
+ * scheduling type of the task.
  */
 
 #ifndef _INCLUDE__SCHED_CONTROLLER__TASK_ALLOCATOR_H_
@@ -29,8 +29,13 @@ namespace Sched_controller {
 			static void allocate_task(Sched_controller*, Rq_manager::Rq_task*);
 
 	};
-//
-//	static class Task_allocator_lo : Task_allocator
+
+/*
+ * TODO: Implement the functionality with subclasses instead of
+ *       doing everything in the Task_allocator
+ */
+
+//	class Task_allocator_lo : Task_allocator
 //	{
 //
 //		private:
@@ -38,15 +43,15 @@ namespace Sched_controller {
 //			int get_inactive_cores(Pcore*);
 //
 //		public:
-//			int allocate_task(Rq_manager::Rq_task, Pcore*);
+//			static int allocate_task(Rq_manager::Rq_task, Pcore*);
 //
 //	};
 //
-//	static class Task_allocator_hi : Task_allocator
+//	class Task_allocator_hi : Task_allocator
 //	{
 //
 //		public:
-//			int allocate_task(Rq_manager::Rq_task, Pcore) {return 1;};
+//			static int allocate_task(Rq_manager::Rq_task, Pcore) {return 1;};
 //
 //	};
 

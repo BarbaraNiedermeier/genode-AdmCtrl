@@ -12,49 +12,67 @@
 #include "sched_controller/sched_controller.h"
 #include "rq_manager/rq_task.h"
 
-/* for testing */
-#include "rq_manager_session/client.h"
-#include "rq_manager_session/connection.h"
-/* */
-
 namespace Sched_controller {
 
+	/**
+	 * Allocate the given task to a suitable run queue of the calling Sched_controller
+	 *
+	 * \param *sc: The Sched_controller that is calling this function, i.e. "this"
+	 * \param *task: Pointer to the task that should be initially allocated to a run queue
+	 */
 	void Task_allocator::allocate_task(Sched_controller *sc, Rq_manager::Rq_task *task)
 	{
 		PINF("Task allocator got the Task with id: %d", task->task_id);
 
-		/* now that we have the task, we need to put it to the right run_queue */
-		/* how to find out which rqs are available??? */
+		/* First we need to check for the Task_class of the task */
 		if (task->task_class == Rq_manager::Task_class::hi) {
-			PINF("This is a high task and we do nothing!");
+			PERR("This is a high task => it can currently not be allocated to any runqueue!");
 			return;
 		}
 
-		PINF("This is a lo task, going to allocate it.");
-
-		/* Now we need to see if there exists any run queue that
+		/* 
+		 * Now we need to see if there exists any run queue that
 		 * already supports this kind of task
 		 */
-		std::vector<Runqueue> rq;
-		sc->which_runqueues(&rq, task->task_class, task->task_strategy);
+		std::vector<Runqueue> rqs;
+		sc->which_runqueues(&rqs, task->task_class, task->task_strategy);
 
-		int num_elements_in_rq = rq.size();
-		PINF("So now we know that there are %d runqueus that we can allocate the task to", num_elements_in_rq);
+		if (rqs.size() == 0) {
+			/* check for empty pcore and put the task there. */
+			std::forward_list<Pcore*> empty_pcore = sc->get_unused_cores();
 
-		double util = 1.0;
-		int lowest_util_rq = -1;
+			if (empty_pcore.empty() == true) {
+				PERR("No empty pcore available");
+				/* TODO: Now we need to reject the task somehow. */
+			} else {
+				PINF("There are empty pcores on the system.");
+				/* 
+				 * TODO: Need to create new runqueue, associate it with the pcore that consumes the
+				 *       lowest energy and enqueue the task into that run queue
+				 */
+ 
+			}
 
-		if (rq.size() == 0) {
-			//check for empty pcore and put the task there.
 		} else {
-			//check which runque has the lowest utilization and put it there.
-			for (auto it = rq.begin(); it != rq.end(); it++) {
+			/* 
+			 * Check which runque has the lowest utilization and put it there.
+			 * TODO: If the RQ is a priority based rq, we can't check for the
+			 *       utilization by means of execution times. Instead we should
+			 *       probably go for the load of the CPU or simply put it some-
+			 *       where.
+			 */
+
+
+			double util = 1.0;
+			int lowest_util_rq = -1;
+
+			for (auto it = rqs.begin(); it != rqs.end(); it++) {
 				double util_comp = sc->get_utilization((*it).rq_buffer);
 				PINF("The utilization of run queue %d is %d and the lowest utilization is currently %d", (*it).rq_buffer, (int) (100 * util_comp), (int) (100 * util));
 				if (util_comp < util) {
 					lowest_util_rq = (*it).rq_buffer;
 					util = util_comp;
-					PINF("Setting lowest_util_rq to %d", lowest_util_rq);
+					//PINF("Setting lowest_util_rq to %d", lowest_util_rq);
 				}
 
 			}
@@ -62,10 +80,6 @@ namespace Sched_controller {
 			PINF("The Runqueue with the lowest utilization is: %d", lowest_util_rq);
 			
 			sc->task_to_rq(lowest_util_rq, task);
-			//Rq_manager::Connection _rq_manager;
-			//int status = -666;
-			//status = _rq_manager.enq(lowest_util_rq, *task);
-			//PINF("Enqueued status of _rq_manager.enq returned: %d", status);
 
 		}
 

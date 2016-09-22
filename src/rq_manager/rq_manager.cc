@@ -72,8 +72,7 @@ namespace Rq_manager
 
 		if (core < _num_cores) {
 			int success = _rqs[core].enq(task);
-			//return success;
-			return 1234;
+			return success;
 		}
 
 

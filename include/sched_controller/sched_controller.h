@@ -12,6 +12,7 @@
 #ifndef _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_
 #define _INCLUDE__SCHED_CONTROLLER__SCHED_CONTROLLER_H_
 
+#include <forward_list>
 #include <unordered_map>
 #include <vector>
 
@@ -53,7 +54,7 @@ namespace Sched_controller
 			int get_num_rqs();
 			void which_runqueues(std::vector<Runqueue>*, Rq_manager::Task_class, Rq_manager::Task_strategy);
 			double get_utilization(int);
-
+			std::forward_list<Pcore*> get_unused_cores();
 
 			Sched_controller();
 			~Sched_controller();
