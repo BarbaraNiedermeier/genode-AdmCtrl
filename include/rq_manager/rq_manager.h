@@ -16,8 +16,8 @@
 #include <dataspace/client.h>
 
 /* local includes */
+#include "rq_task/rq_task.h"
 #include "rq_manager/rq_buffer.h"
-#include "rq_manager/rq_task.h"
 #include "rq_manager_session/rq_manager_session.h"
 
 namespace Rq_manager {
@@ -28,15 +28,15 @@ namespace Rq_manager {
 		private:
 
 			int _num_cores = 0;
-			Rq_buffer<Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */
+			Rq_buffer<Rq_task::Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */
 			
 			int _init_rqs(int);
 			int _set_ncores(int);
 
 		public:
 
-			int enq(int, Rq_task);
-			int deq(int, Rq_task**);
+			int enq(int, Rq_task::Rq_task);
+			int deq(int, Rq_task::Rq_task**);
 			int get_num_rqs();
 			Genode::Dataspace_capability get_core_rq_ds(int);
 //			int deq_n(int, int);

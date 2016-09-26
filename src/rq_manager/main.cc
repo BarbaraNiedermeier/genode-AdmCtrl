@@ -16,7 +16,7 @@
 /* local includes */
 #include "rq_manager/rq_manager.h"
 #include "rq_manager/rq_buffer.h"
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 #include "rq_manager_session/rq_manager_session.h"
 
 
@@ -32,7 +32,7 @@ namespace Rq_manager
 
 		public:
 
-			int enq(int core, Rq_task task)
+			int enq(int core, Rq_task::Rq_task task)
 			{
 				// here must go some real function
 				// return Rq_manager::enq(core, task)

@@ -15,7 +15,7 @@
 #include <forward_list>
 
 #include "rq_manager/rq_buffer.h"
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller
 {
@@ -27,7 +27,7 @@ namespace Sched_controller
 
 		private:
 			static std::forward_list<Pcore*> _cores;
-			Rq_manager::Task_class _pcore_class;
+			Rq_task::Task_class _pcore_class;
 
 		protected:
 

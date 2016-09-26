@@ -9,7 +9,7 @@
 
 #include "sched_controller/pcore.h"
 #include "rq_manager/rq_buffer.h"
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller
 {

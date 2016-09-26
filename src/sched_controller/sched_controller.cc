@@ -86,8 +86,8 @@ namespace Sched_controller {
 		_runqueue = new Runqueue[_num_rqs];
 
 		for (int i = 0; i < _num_pcores; i++) {
-			_runqueue[i]._task_class = Rq_manager::Task_class::lo;
-			_runqueue[i]._task_strategy = Rq_manager::Task_strategy::priority;
+			_runqueue[i]._task_class = Rq_task::Task_class::lo;
+			_runqueue[i]._task_strategy = Rq_task::Task_strategy::priority;
 			_runqueue[i].rq_buffer = i;
 		}
 
@@ -101,7 +101,7 @@ namespace Sched_controller {
 	 *
 	 * \param newly arriving task
 	 */
-	void Sched_controller::allocate_task(Rq_manager::Rq_task task)
+	void Sched_controller::allocate_task(Rq_task::Rq_task task)
 	{
 
 		PINF("Now we'll allocate Task with id %d", task.task_id);
@@ -109,7 +109,7 @@ namespace Sched_controller {
 
 	}
 
-	void Sched_controller::task_to_rq(int rq, Rq_manager::Rq_task *task) {
+	void Sched_controller::task_to_rq(int rq, Rq_task::Rq_task *task) {
 		PDBG("Number of RQs: %d", _rq_manager.get_num_rqs());
 		int status = _rq_manager.enq(rq, *task);
 		PDBG("%d", status);
@@ -131,7 +131,7 @@ namespace Sched_controller {
 	 * \param
 	 *
 	 */
-	void Sched_controller::which_runqueues(std::vector<Runqueue> *rq, Rq_manager::Task_class task_class, Rq_manager::Task_strategy task_strategy)
+	void Sched_controller::which_runqueues(std::vector<Runqueue> *rq, Rq_task::Task_class task_class, Rq_task::Task_strategy task_strategy)
 	{
 		rq->reserve(_num_rqs);
 		for (int i = 0; i < _num_rqs; i++) {

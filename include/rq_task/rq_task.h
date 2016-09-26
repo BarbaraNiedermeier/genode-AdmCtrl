@@ -5,10 +5,10 @@
  *
  */
 
-#ifndef _INCLUDE__RQ_MANAGER__RQ_TASK_H_
-#define _INCLUDE__RQ_MANAGER__RQ_TASK_H_
+#ifndef _INCLUDE__RQ_TASK__RQ_TASK_H_
+#define _INCLUDE__RQ_TASK__RQ_TASK_H_
 
-namespace Rq_manager
+namespace Rq_task
 {
 
 	enum class Task_class { hi, lo };
@@ -30,4 +30,4 @@ namespace Rq_manager
 	};
 }
 
-#endif /* _INCLUDE__RQ_MANAGER__RQ_TASK_H_ */
+#endif /* _INCLUDE__RQ_TASK__RQ_TASK_H_ */

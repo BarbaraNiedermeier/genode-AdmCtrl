@@ -10,7 +10,7 @@
 
 #include "sched_controller/task_allocator.h"
 #include "sched_controller/sched_controller.h"
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller {
 
@@ -20,12 +20,12 @@ namespace Sched_controller {
 	 * \param *sc: The Sched_controller that is calling this function, i.e. "this"
 	 * \param *task: Pointer to the task that should be initially allocated to a run queue
 	 */
-	void Task_allocator::allocate_task(Sched_controller *sc, Rq_manager::Rq_task *task)
+	void Task_allocator::allocate_task(Sched_controller *sc, Rq_task::Rq_task *task)
 	{
 		PINF("Task allocator got the Task with id: %d", task->task_id);
 
 		/* First we need to check for the Task_class of the task */
-		if (task->task_class == Rq_manager::Task_class::hi) {
+		if (task->task_class == Rq_task::Task_class::hi) {
 			PERR("This is a high task => it can currently not be allocated to any runqueue!");
 			return;
 		}

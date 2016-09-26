@@ -16,7 +16,7 @@
 /* local includes */
 #include <sched_controller_session/sched_controller_session.h>
 #include <sched_controller/sched_controller.h>
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller {
 
@@ -33,7 +33,7 @@ namespace Sched_controller {
 				PINF("sched_controller is initialized");
 			}
 
-			void new_task(Rq_manager::Rq_task task)
+			void new_task(Rq_task::Rq_task task)
 			{
 				PINF("Received new task with id: %d", task.task_id);
 				_ctr->allocate_task(task);

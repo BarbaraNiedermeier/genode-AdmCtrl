@@ -26,7 +26,7 @@ namespace Sched_controller {
 
 		public:
 			//virtual int allocate_task(Rq_manager::Rq_task, Pcore*) = 0;
-			static void allocate_task(Sched_controller*, Rq_manager::Rq_task*);
+			static void allocate_task(Sched_controller*, Rq_task::Rq_task*);
 
 	};
 

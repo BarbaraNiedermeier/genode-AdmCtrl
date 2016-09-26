@@ -25,7 +25,7 @@ int main()
 	int *head = nullptr;
 	int *tail = nullptr;
 	int *window = nullptr;
-	Rq_manager::Rq_task *buf = nullptr;
+	Rq_task::Rq_task *buf = nullptr;
 	Dataspace_capability dsc;
 
 	/* check for the number of run queues available */
@@ -69,7 +69,7 @@ int main()
 	head = (int*) _headp;
 	tail = (int*) _tailp;
 	window = (int*) _windowp;
-	buf = (Rq_manager::Rq_task*) _bufp;
+	buf = (Rq_task::Rq_task*) _bufp;
 
 	PINF("The tail pointer points to %d", *tail);
 	PINF("The head pointer points to %d", *head);
@@ -80,7 +80,7 @@ int main()
 		PINF("Obtained lock, now set to: %d", *_lock);
 
 		/* copy content of buf[3] to variable task */
-		Rq_manager::Rq_task task = buf[3];
+		Rq_task::Rq_task task = buf[3];
 		PINF("Got task with task_id: %d, wcet: %d, valid: %d", task.task_id, task.wcet, task.valid);
 
 		/* 

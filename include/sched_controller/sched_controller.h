@@ -25,8 +25,8 @@ namespace Sched_controller
 
 	struct Runqueue {
 
-		Rq_manager::Task_class _task_class;
-		Rq_manager::Task_strategy _task_strategy;
+		Rq_task::Task_class _task_class;
+		Rq_task::Task_strategy _task_strategy;
 		int rq_buffer;
 
 	};
@@ -49,10 +49,10 @@ namespace Sched_controller
 
 		public:
 
-			void allocate_task(Rq_manager::Rq_task);
-			void task_to_rq(int, Rq_manager::Rq_task*);
+			void allocate_task(Rq_task::Rq_task);
+			void task_to_rq(int, Rq_task::Rq_task*);
 			int get_num_rqs();
-			void which_runqueues(std::vector<Runqueue>*, Rq_manager::Task_class, Rq_manager::Task_strategy);
+			void which_runqueues(std::vector<Runqueue>*, Rq_task::Task_class, Rq_task::Task_strategy);
 			double get_utilization(int);
 			std::forward_list<Pcore*> get_unused_cores();
 

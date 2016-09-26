@@ -12,7 +12,7 @@
 #include <base/rpc_client.h>
 #include <base/printf.h>
 
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller {
 
@@ -27,7 +27,7 @@ namespace Sched_controller {
 			call<Rpc_get_init_status>();
 		}
 
-		void new_task(Rq_manager::Rq_task task)
+		void new_task(Rq_task::Rq_task task)
 		{
 			call<Rpc_new_task>(task);
 		}

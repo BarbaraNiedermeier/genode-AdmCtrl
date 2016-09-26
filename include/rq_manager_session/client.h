@@ -13,7 +13,7 @@
 
 /* local includes */
 #include "rq_manager_session/rq_manager_session.h"
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 
 namespace Rq_manager {
 
@@ -21,7 +21,7 @@ namespace Rq_manager {
 	{
 		Session_client(Genode::Capability<Session> cap) : Genode::Rpc_client<Session>(cap) { }
 
-		int enq(int core, Rq_task task)
+		int enq(int core, Rq_task::Rq_task task)
 		{
 			return call<Rpc_enq>(core, task);
 		}

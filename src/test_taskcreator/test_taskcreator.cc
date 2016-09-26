@@ -9,7 +9,7 @@
 #include <base/printf.h>
 #include <base/sleep.h>
 
-#include "rq_manager/rq_task.h"
+#include "rq_task/rq_task.h"
 #include "sched_controller_session/connection.h"
 
 int main()
@@ -25,20 +25,20 @@ int main()
 
 		int rand = distribution(generator);
 
-		Rq_manager::Rq_task task;
+		Rq_task::Rq_task task;
 
 		task.task_id = rand;
 		if (rand % 2 == 0) {
-			task.task_class = Rq_manager::Task_class::hi;
+			task.task_class = Rq_task::Task_class::hi;
 		} else {
-			task.task_class = Rq_manager::Task_class::lo;
+			task.task_class = Rq_task::Task_class::lo;
 		}
 		if (rand % 3 == 0) {
-			task.task_strategy = Rq_manager::Task_strategy::priority;
+			task.task_strategy = Rq_task::Task_strategy::priority;
 		} else if (rand % 3 == 1) {
-			task.task_strategy = Rq_manager::Task_strategy::deadline;
+			task.task_strategy = Rq_task::Task_strategy::deadline;
 		} else {
-			task.task_strategy = Rq_manager::Task_strategy::deadprio;
+			task.task_strategy = Rq_task::Task_strategy::deadprio;
 		}
 		task.deadline = (float) rand;
 		task.wcet = (float) rand;
