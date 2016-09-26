@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer sched_controller rq_manager gen_load }
+build { core init drivers/timer taskmanager idle lib/trace/policy/rpc_name sched_controller rq_manager gen_load }
 
 create_boot_directory
 
@@ -11,7 +11,7 @@ create_boot_directory
 #
 
 install_config {
-<config>
+<config prio_levels="4">
     <parent-provides>
 		<service name="CAP"/>
         <service name="CPU"/>
@@ -33,26 +33,34 @@ install_config {
         <resource name="RAM" quantum="1M"/>
         <provides><service name="Timer"/></provides>
     </start>
+	<start name="taskmanager">
+		<resource name="RAM" quantum="30M"/>
+		<config>
+			<trace_policy label="init -> taskmanager" module="rpc_name" />
+		</config>
+	</start>
+	<start name="idle" priority="-2">
+		<resource name="RAM" quantum="1M"/>
+	</start>
     <start name="rq_manager">
         <resource name="RAM" quantum="4M"/>
 		<provides><service name="Rq_manager"/></provides>
     </start>
     <start name="sched_controller">
-        <resource name="RAM" quantum="8M"/>
+        <resource name="RAM" quantum="4M"/>
         <provides><service name="Sched_controller"/></provides>
     </start>
-    <start name="gen_load">
-        <resource name="RAM" quantum="8M"/>
-        <provides><service name="Gen_load"/></provides>
-    </start>
+	<start name="gen_load">
+		<resource name="RAM" quantum="4M"/>
+	</start>
 </config>}
 
 #
 #Boot image
 #
 
-build_boot_image { core init timer rq_manager sched_controller gen_load ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+build_boot_image { core init timer taskmanager idle rq_manager sched_controller rpc_name ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so gen_load }
 
-append qemu_args "-smp 4 -nographic "
+append qemu_args "-smp 4 -nographic -serial mon:stdio -m 1024"
 
 run_genode_until forever

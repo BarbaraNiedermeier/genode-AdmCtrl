@@ -17,6 +17,7 @@
 
 #include "sched_controller/sched_controller.h"
 #include "sched_controller/task_allocator.h"
+#include "sched_controller/monitor.h"
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
 
@@ -230,6 +231,8 @@ namespace Sched_controller {
 			_pcore_rq_association.insert(_pcore_rq_pair);
 			PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
+
+		Monitor::monitor_data();
 
 	}
 
