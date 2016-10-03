@@ -72,7 +72,7 @@ namespace Sched_controller {
 				if (util_comp < util) {
 					lowest_util_rq = (*it).rq_buffer;
 					util = util_comp;
-					//PINF("Setting lowest_util_rq to %d", lowest_util_rq);
+					PINF("Setting lowest_util_rq to %d", lowest_util_rq);
 				}
 
 			}

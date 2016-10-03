@@ -32,12 +32,12 @@ namespace Sched_controller
 				Genode::Trace::CPU_info info = trace.cpu_info(subjects[i]); 
 				Genode::Trace::RAM_info ram_info = trace.ram_info(subjects[i]); 
 
-				Genode::printf("ID:%d name:%s exec_time:%lld prio:%d RAM:%d\n", 
-					   subjects[i].id, 
-					   info.thread_name().string(), 
-					   info.execution_time().value, 
-					   info.prio(), 
-					   ram_info.ram_used()); 
+//				Genode::printf("ID:%d name:%s exec_time:%lld prio:%d RAM:%d\n", 
+//					   subjects[i].id, 
+//					   info.thread_name().string(), 
+//					   info.execution_time().value, 
+//					   info.prio(), 
+//					   ram_info.ram_used()); 
 			}
 
 			timer.msleep(2000);

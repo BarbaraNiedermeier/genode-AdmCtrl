@@ -87,7 +87,7 @@ namespace Rq_manager
 			int deq(T**);    /* deque the element at the head */
 	//		T* deq_blk(int n); /* deque n elements beginning at the head */
 
-			void init_w_shared_ds(int);                                /* helpere function for createing the Rq_buffer within a shared memory */
+			void init_w_shared_ds(int);                                /* helper function for createing the Rq_buffer within a shared memory */
 			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
 
 			Rq_buffer();
