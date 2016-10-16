@@ -79,7 +79,7 @@ namespace Rq_manager
 			Genode::Dataspace_capability _ds; /* dataspace capability of the shared object */
 			char *_ds_begin = nullptr;        /* pointer to the beginning of the shared dataspace */
 
-			void _init_rq_buf(int);  /* helper function for enabling different constructors, not used anymore */
+//			void _init_rq_buf(int);  /* helper function for enabling different constructors, not used anymore */
 
 		public:
 

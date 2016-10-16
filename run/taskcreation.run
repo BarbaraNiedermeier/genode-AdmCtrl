@@ -22,6 +22,7 @@ install_config {
         <service name="IO_MEM"/>
         <service name="IO_PORT"/>
         <service name="IRQ"/>
+		<service name="TRACE"/>
     </parent-provides>
     <default-route>
         <any-service> <parent/> <any-child/> </any-service>
@@ -31,15 +32,15 @@ install_config {
         <provides><service name="Timer"/></provides>
     </start>
     <start name="rq_manager">
-        <resource name="RAM" quantum="4M"/>
+        <resource name="RAM" quantum="8M"/>
 		<provides><service name="Rq_manager"/></provides>
     </start>
     <start name="sched_controller">
-        <resource name="RAM" quantum="4M"/>
+        <resource name="RAM" quantum="8M"/>
         <provides><service name="Sched_controller"/></provides>
     </start>
 	    <start name="test_taskcreator">
-        <resource name="RAM" quantum="4M"/>
+        <resource name="RAM" quantum="8M"/>
     </start>
 </config>}
 

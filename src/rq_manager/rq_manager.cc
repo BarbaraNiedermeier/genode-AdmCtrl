@@ -64,7 +64,7 @@ namespace Rq_manager
 	 * \param task: the task that should be added
 	 *
 	 * \return  0 if successful
-	 *         >0 in any other case
+	 *         <0 in any other case
 	 */
 	int Rq_manager::enq(int core, Rq_task::Rq_task task)
 	{
@@ -76,7 +76,7 @@ namespace Rq_manager
 		}
 
 
-		return 1;
+		return -1;
 
 	}
 
@@ -97,7 +97,7 @@ namespace Rq_manager
 			return success;
 		}
 
-		return 1;
+		return -1;
 	}
 
 	/**

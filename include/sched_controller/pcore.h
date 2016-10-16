@@ -27,12 +27,12 @@ namespace Sched_controller
 
 		private:
 			static std::forward_list<Pcore*> _cores;
-			Rq_task::Task_class _pcore_class;
 
 		protected:
 
 			int id;
 			Pcore_state pcore_state;
+			Rq_task::Task_class _pcore_class;
 
 		public:
 
