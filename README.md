@@ -1,2 +1,3 @@
 # genode-AdmCtrl
-Admission Control for the Genode OS Framework
+
+Formerly admission control for the Genode OS Framework, now containing the OC-based controller for task scheduling optimization.
