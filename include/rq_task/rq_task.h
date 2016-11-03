@@ -13,7 +13,7 @@ namespace Rq_task
 
 	enum class Task_class { hi, lo };
 
-	enum class Task_strategy { priority, deadline, deadprio };
+	enum class Task_strategy { priority, deadline };
 
 	struct Rq_task
 	{

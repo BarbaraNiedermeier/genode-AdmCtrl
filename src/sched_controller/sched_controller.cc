@@ -81,7 +81,7 @@ namespace Sched_controller {
 		 * number of run queues.
 		 */
 		_num_rqs = _rq_manager.get_num_rqs();
-		PDBG("Number of supplied run queues is: %d", _num_rqs);
+		PINF("Number of supplied run queues is: %d", _num_rqs);
 
 		_runqueue = new Runqueue[_num_rqs];
 
@@ -104,15 +104,15 @@ namespace Sched_controller {
 	void Sched_controller::allocate_task(Rq_task::Rq_task task)
 	{
 
-		PINF("Now we'll allocate Task with id %d", task.task_id);
+		PINF("Start allocating Task with id %d", task.task_id);
 		Task_allocator::allocate_task(this, &task);
 
 	}
 
 	void Sched_controller::task_to_rq(int rq, Rq_task::Rq_task *task) {
-		PDBG("Number of RQs: %d", _rq_manager.get_num_rqs());
+		//PINF("Number of RQs: %d", _rq_manager.get_num_rqs());
 		int status = _rq_manager.enq(rq, *task);
-		PDBG("%d", status);
+		//PDBG("%d", status);
 		return;
 	}
 
@@ -161,7 +161,7 @@ namespace Sched_controller {
 		unsigned long time_ms = _timer.elapsed_ms();
 
 		std::string seed_str = std::to_string(time_ms);
-		PINF("The elapsed time for the seed is: %ld", time_ms);
+		//PINF("The elapsed time for the seed is: %ld", time_ms);
 
 		std::default_random_engine generator;
 		std::seed_seq seed1 (seed_str.begin(),seed_str.end());
@@ -232,7 +232,7 @@ namespace Sched_controller {
 			PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		Monitor::monitor_data();
+		//Monitor::monitor_data();
 
 	}
 

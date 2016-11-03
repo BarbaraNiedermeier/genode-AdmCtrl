@@ -70,7 +70,7 @@ namespace Sched_controller {
 						   Sched_controller *ctr)
 			: Genode::Root_component<Session_component>(ep, allocator)
 			{
-				PDBG("Creating root component");
+				//PDBG("Creating root component");
 				_ctr = ctr;
 			}
 

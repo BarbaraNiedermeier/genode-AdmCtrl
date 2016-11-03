@@ -68,7 +68,7 @@ namespace Rq_manager
 	 */
 	int Rq_manager::enq(int core, Rq_task::Rq_task task)
 	{
-		PDBG("Task is enqueued now.");
+		PINF("Task is now enqueued to run queue %d", core);
 
 		if (core < _num_cores) {
 			int success = _rqs[core].enq(task);

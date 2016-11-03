@@ -37,8 +37,6 @@ int main()
 			task.task_strategy = Rq_task::Task_strategy::priority;
 		} else if (rand % 3 == 1) {
 			task.task_strategy = Rq_task::Task_strategy::deadline;
-		} else {
-			task.task_strategy = Rq_task::Task_strategy::deadprio;
 		}
 		task.deadline = (float) rand;
 		task.wcet = (float) rand;
@@ -48,7 +46,10 @@ int main()
 
 		_timer.msleep(rand);
 
-		PINF("Task created with id: %d", task.task_id);
+		PERR("Task created with id: %d", task.task_id);
+		PINF("          task_class: %d", task.task_class);
+		PINF("       task_strategy: %d", task.task_strategy);
+		PINF("                prio: %d", task.prio);
 
 		_schedcontrlr.new_task(task);
 

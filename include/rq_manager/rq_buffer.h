@@ -261,8 +261,8 @@ namespace Rq_manager
 	Rq_buffer<T>::Rq_buffer()
 	{
 
-		PINF("This class must be instantiated explicitly by calling the function 'init_w_shared_ds(int size)'.");
-		PINF("If this function is not executed the class will stay in an undefined state.");
+		//PINF("This class must be instantiated explicitly by calling the function 'init_w_shared_ds(int size)'.");
+		//PINF("If this function is not executed the class will stay in an undefined state.");
 
 	}
 }

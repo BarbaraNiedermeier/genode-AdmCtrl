@@ -26,7 +26,7 @@ namespace Sched_controller {
 
 		/* First we need to check for the Task_class of the task */
 		if (task->task_class == Rq_task::Task_class::hi) {
-			PERR("This is a high task => it can currently not be allocated to any runqueue!");
+			PINF("This is a high task => can currently not be allocated!");
 			return;
 		}
 
@@ -42,7 +42,7 @@ namespace Sched_controller {
 			std::forward_list<Pcore*> empty_pcore = sc->get_unused_cores();
 
 			if (empty_pcore.empty() == true) {
-				PERR("No empty pcore available");
+				PINF("No empty pcore available");
 				/* TODO: Now we need to reject the task somehow. */
 			} else {
 				PINF("There are empty pcores on the system.");
@@ -68,11 +68,11 @@ namespace Sched_controller {
 
 			for (auto it = rqs.begin(); it != rqs.end(); it++) {
 				double util_comp = sc->get_utilization((*it).rq_buffer);
-				PINF("The utilization of run queue %d is %d and the lowest utilization is currently %d", (*it).rq_buffer, (int) (100 * util_comp), (int) (100 * util));
+				//PINF("The utilization of run queue %d is %d and the lowest utilization is currently %d", (*it).rq_buffer, (int) (100 * util_comp), (int) (100 * util));
 				if (util_comp < util) {
 					lowest_util_rq = (*it).rq_buffer;
 					util = util_comp;
-					PINF("Setting lowest_util_rq to %d", lowest_util_rq);
+					//PINF("Setting lowest_util_rq to %d", lowest_util_rq);
 				}
 
 			}
