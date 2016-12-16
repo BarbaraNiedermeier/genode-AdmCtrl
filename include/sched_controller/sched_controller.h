@@ -18,6 +18,9 @@
 
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
+#include "mon_manager/mon_manager_connection.h"
+#include "mon_manager/mon_manager_client.h"
+#include "mon_manager/mon_manager.h"
 #include "sched_controller/pcore.h"
 
 namespace Sched_controller
@@ -37,6 +40,8 @@ namespace Sched_controller
 		private:
 
 			Rq_manager::Connection _rq_manager;
+			Mon_manager::Connection _mon_manager;
+			Genode::Dataspace_capability mon_ds_cap;
 			int _num_rqs = 0;
 			int _num_pcores = 0;
 			Pcore *_pcore;                                                    /* Array of pcores */
@@ -58,6 +63,9 @@ namespace Sched_controller
 
 			Sched_controller();
 			~Sched_controller();
+
+			void init_ds_cap();
+			void display_info();
 
 	};
 

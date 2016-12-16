@@ -20,6 +20,7 @@
 #include "sched_controller/monitor.h"
 #include "rq_manager_session/client.h"
 #include "rq_manager_session/connection.h"
+#include "mon_manager/mon_manager.h"
 
 namespace Sched_controller {
 
@@ -239,6 +240,21 @@ namespace Sched_controller {
 	Sched_controller::~Sched_controller()
 	{
 
+	}
+
+	void Sched_controller::init_ds_cap()
+	{
+		mon_ds_cap=_mon_manager.init_ds_cap(100);
+		Genode::env()->rm_session()->attach(mon_ds_cap);
+	}
+
+	void Sched_controller::display_info()
+	{
+		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
+		_mon_manager.update_info(mon_ds_cap);
+		for(int i=0; i<100; i++) {
+			PDBG("%s %llu", threads[i].thread_name.string(), threads[i].execution_time.value);
+		}
 	}
 
 }

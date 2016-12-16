@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer sched_controller rq_manager gen_load }
+build { core init drivers/timer sched_controller rq_manager mon_manager gen_load }
 
 create_boot_directory
 
@@ -45,13 +45,17 @@ install_config {
         <resource name="RAM" quantum="8M"/>
         <provides><service name="Gen_load"/></provides>
     </start>
+    <start name="mon_manager">
+        <resource name="RAM" quantum="8M"/>
+        <provides><service name="mon_manager"/></provides>
+    </start>
 </config>}
 
 #
 #Boot image
 #
 
-build_boot_image { core init timer rq_manager sched_controller gen_load ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+build_boot_image { core init timer rq_manager sched_controller mon_manager gen_load ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 
