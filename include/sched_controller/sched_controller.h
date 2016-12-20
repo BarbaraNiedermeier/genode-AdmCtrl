@@ -22,6 +22,7 @@
 #include "mon_manager/mon_manager_client.h"
 #include "mon_manager/mon_manager.h"
 #include "sched_controller/pcore.h"
+#include <timer_session/connection.h>
 
 namespace Sched_controller
 {
@@ -41,6 +42,7 @@ namespace Sched_controller
 
 			Rq_manager::Connection _rq_manager;
 			Mon_manager::Connection _mon_manager;
+			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
 			int _num_rqs = 0;
 			int _num_pcores = 0;
