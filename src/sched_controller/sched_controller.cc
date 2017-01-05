@@ -40,7 +40,7 @@ namespace Sched_controller {
 		 * not implemented, therefore we will set the number of cores
 		 * to be 4.
 		 */
-		_num_pcores = 4;
+		_num_pcores = _mon_manager.get_num_cores();
 
 		return 0;
 	}
@@ -210,6 +210,9 @@ namespace Sched_controller {
 	Sched_controller::Sched_controller()
 	{
 
+		mon_ds_cap=_mon_manager.init_ds_cap(100);
+		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
+
 		/* We then need to figure out how many CPU cores are available at the system */
 		_set_num_pcores();
 
@@ -233,8 +236,6 @@ namespace Sched_controller {
 			PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		//Monitor::monitor_data();
-
 	}
 
 	Sched_controller::~Sched_controller()
@@ -242,32 +243,5 @@ namespace Sched_controller {
 
 	}
 
-	void Sched_controller::init_ds_cap()
-	{
-		mon_ds_cap=_mon_manager.init_ds_cap(100);
-		Genode::env()->rm_session()->attach(mon_ds_cap);
-	}
-
-	void Sched_controller::display_info()
-	{
-		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
-		_mon_manager.update_info(mon_ds_cap);
-		for(int i=0; i<10; i++) {
-			PDBG("%s %llu", threads[i].thread_name.string(), threads[i].execution_time.value);
-		}
-		PDBG("Core 0 is online: %d",_mon_manager.is_core_online(0));
-		PDBG("Core 1 is online: %d",_mon_manager.is_core_online(1));
-		PDBG("Core 2 is online: %d",_mon_manager.is_core_online(2));
-		PDBG("Core 3 is online: %d",_mon_manager.is_core_online(3));
-		PDBG("Number of cores: %d",_mon_manager.get_num_cores());
-		while(true){
-			PDBG("Idle 0: %llu",_mon_manager.get_idle_time(0).value);
-			PDBG("Idle 1: %llu",_mon_manager.get_idle_time(1).value);
-			PDBG("Idle 2: %llu",_mon_manager.get_idle_time(2).value);
-			PDBG("Idle 3: %llu",_mon_manager.get_idle_time(3).value);
-			_timer.msleep(1000);
-			_mon_manager.update_info(mon_ds_cap);
-		}
-	}
 
 }

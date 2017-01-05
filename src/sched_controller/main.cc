@@ -96,8 +96,6 @@ int main(void)
 	static Sched_controller::Root_component sched_controller_root(&ep, &sliced_heap, &ctr);
 	env()->parent()->announce(ep.manage(&sched_controller_root));
 
-	ctr.init_ds_cap();
-	ctr.display_info();
 
 	sleep_forever();
 

@@ -66,9 +66,6 @@ namespace Sched_controller
 			Sched_controller();
 			~Sched_controller();
 
-			void init_ds_cap();
-			void display_info();
-
 	};
 
 }
