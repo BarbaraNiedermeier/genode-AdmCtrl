@@ -32,6 +32,16 @@ namespace Sched_controller {
 			call<Rpc_new_task>(task);
 		}
 
+		void set_sync_ds(Genode::Dataspace_capability ds_cap)
+		{
+			call<Rpc_set_sync_ds>(ds_cap);
+		}
+
+		int are_you_ready()
+		{
+			call<Rpc_are_you_ready>();
+		}
+
 	};
 }
 

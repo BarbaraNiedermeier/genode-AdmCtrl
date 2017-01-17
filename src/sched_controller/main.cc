@@ -39,6 +39,16 @@ namespace Sched_controller {
 				_ctr->allocate_task(task);
 			}
 
+			void set_sync_ds(Genode::Dataspace_capability ds_cap)
+			{
+				_ctr->set_sync_ds(ds_cap);
+			}
+
+			int are_you_ready()
+			{
+				_ctr->are_you_ready();	
+			}
+
 			/* Session_component constructor enhanced by Sched_controller object */
 			Session_component(Sched_controller *ctr)
 			: Genode::Rpc_object<Session>()

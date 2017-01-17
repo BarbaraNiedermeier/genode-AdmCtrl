@@ -14,7 +14,7 @@
 #include <vector>
 #include <forward_list>
 
-#include "rq_manager/rq_buffer.h"
+#include "sched_controller/rq_buffer.h"
 #include "rq_task/rq_task.h"
 
 namespace Sched_controller

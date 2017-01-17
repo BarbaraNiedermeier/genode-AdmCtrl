@@ -16,13 +16,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rq_manager_session/client.h"
-#include "rq_manager_session/connection.h"
 #include "mon_manager/mon_manager_connection.h"
 #include "mon_manager/mon_manager_client.h"
 #include "mon_manager/mon_manager.h"
 #include "sched_controller/pcore.h"
 #include <timer_session/connection.h>
+#include "sched_controller/rq_buffer.h"
+#include "rq_task/rq_task.h"
 
 namespace Sched_controller
 {
@@ -40,19 +40,24 @@ namespace Sched_controller
 
 		private:
 
-			Rq_manager::Connection _rq_manager;
 			Mon_manager::Connection _mon_manager;
 			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
-			int _num_rqs = 0;
+			Genode::Dataspace_capability sync_ds_cap;
+			int _num_rqs = 128;
 			int _num_pcores = 0;
+			int _num_cores = 0;
 			Pcore *_pcore;                                                    /* Array of pcores */
 			Runqueue *_runqueue;                                              /* Array of runqueues */
 			std::unordered_multimap<Pcore*, Runqueue*> _pcore_rq_association; /* which pcore hosts which rq */
-
+			Rq_buffer<Rq_task::Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */			
+			
 			int _set_num_pcores();
+			int _init_rqs(int);
 			int _init_pcores();
 			int _init_runqueues();
+			int enq(int, Rq_task::Rq_task);
+			int deq(int, Rq_task::Rq_task**);
 
 		public:
 
@@ -62,6 +67,8 @@ namespace Sched_controller
 			void which_runqueues(std::vector<Runqueue>*, Rq_task::Task_class, Rq_task::Task_strategy);
 			double get_utilization(int);
 			std::forward_list<Pcore*> get_unused_cores();
+			void set_sync_ds(Genode::Dataspace_capability);
+			int are_you_ready();
 
 			Sched_controller();
 			~Sched_controller();

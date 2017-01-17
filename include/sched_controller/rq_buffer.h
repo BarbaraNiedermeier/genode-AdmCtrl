@@ -61,7 +61,7 @@
 #include <base/printf.h>
 #include <spec/arm/cpu/atomic.h> /* atomic access to int values on arm CPUs */
 
-namespace Rq_manager
+namespace Sched_controller
 {
 
 	template <typename T>

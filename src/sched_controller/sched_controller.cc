@@ -18,11 +18,86 @@
 #include "sched_controller/sched_controller.h"
 #include "sched_controller/task_allocator.h"
 #include "sched_controller/monitor.h"
-#include "rq_manager_session/client.h"
-#include "rq_manager_session/connection.h"
 #include "mon_manager/mon_manager.h"
 
 namespace Sched_controller {
+
+	/**
+	 * Initialize the run queues that are used.
+	 *
+	 * \param rq_size: size of the run queues,
+	 *        determines how many task can be
+	 *        held in the queue at once.
+	 *
+	 * \return 0 if finished
+	 */
+	int Sched_controller::_init_rqs(int rq_size)
+	{
+
+		_rqs = new Rq_buffer<Rq_task::Rq_task>[_num_cores];
+
+		for (int i = 0; i < _num_cores; i++) {
+			_rqs[i].init_w_shared_ds(rq_size);
+		}
+		Genode::printf("New Rq_buffer created. Starting address is: %p.\n", _rqs);
+
+		return 0;
+
+	}
+
+	/**
+	 * Enqueue a new Task in the buffer
+	 *
+	 * \param core: which core/run queue the
+	 *        task should be added to
+	 * \param task: the task that should be added
+	 *
+	 * \return  0 if successful
+	 *         <0 in any other case
+	 */
+	int Sched_controller::enq(int core, Rq_task::Rq_task task)
+	{
+		PINF("Task is now enqueued to run queue %d", core);
+
+		if (core < _num_cores) {
+			int success = _rqs[core].enq(task);
+			return success;
+		}
+
+
+		return -1;
+
+	}
+
+	/**
+	 * Dequeue a task from a given run queue
+	 *
+	 * \param core: specify the run queue from which
+	 *        the element should be dequeued
+	 * \param **task_ptr: pointer that will be set
+	 *        to the location where the task is stored
+	 */
+	int Sched_controller::deq(int core, Rq_task::Rq_task **task_ptr)
+	{
+
+		if (core < _num_cores) {
+			int success = _rqs[core].deq(task_ptr);
+			PINF("Removed task from core %d, pointer is %p", core, *task_ptr);
+			return success;
+		}
+
+		return -1;
+	}
+
+	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)
+	{
+		sync_ds_cap=ds_cap;
+	}
+
+	int Sched_controller::are_you_ready()
+	{
+		return 0;
+	}
 
 	/**
 	 * Get and set the number of available physically
@@ -34,12 +109,6 @@ namespace Sched_controller {
 	 */
 	int Sched_controller::_set_num_pcores()
 	{
-		/* 
-		 * From the monitor we will request the number of physical
-		 * cores available at the system. Currently this feature is
-		 * not implemented, therefore we will set the number of cores
-		 * to be 4.
-		 */
 		_num_pcores = _mon_manager.get_num_cores();
 
 		return 0;
@@ -81,7 +150,7 @@ namespace Sched_controller {
 		 * moment the rq_manager is configured to provide a fixed
 		 * number of run queues.
 		 */
-		_num_rqs = _rq_manager.get_num_rqs();
+		//_num_rqs = _rq_manager.get_num_rqs();
 		PINF("Number of supplied run queues is: %d", _num_rqs);
 
 		_runqueue = new Runqueue[_num_rqs];
@@ -112,7 +181,7 @@ namespace Sched_controller {
 
 	void Sched_controller::task_to_rq(int rq, Rq_task::Rq_task *task) {
 		//PINF("Number of RQs: %d", _rq_manager.get_num_rqs());
-		int status = _rq_manager.enq(rq, *task);
+		int status = enq(rq, *task);
 		//PDBG("%d", status);
 		return;
 	}
@@ -209,6 +278,8 @@ namespace Sched_controller {
 
 	Sched_controller::Sched_controller()
 	{
+
+		_init_rqs(128);
 
 		mon_ds_cap=_mon_manager.init_ds_cap(100);
 		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
