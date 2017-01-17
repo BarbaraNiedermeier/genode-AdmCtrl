@@ -19,6 +19,7 @@
 #include "sched_controller/task_allocator.h"
 #include "sched_controller/monitor.h"
 #include "mon_manager/mon_manager.h"
+#include "timer_session/connection.h"
 
 namespace Sched_controller {
 
@@ -92,10 +93,13 @@ namespace Sched_controller {
 	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)
 	{
 		sync_ds_cap=ds_cap;
+		_rqs=Genode::env()->rm_session()->attach(ds_cap);
 	}
 
 	int Sched_controller::are_you_ready()
 	{
+		rec.wait_for_signal();
+		PDBG("Got signal");
 		return 0;
 	}
 
@@ -110,7 +114,8 @@ namespace Sched_controller {
 	int Sched_controller::_set_num_pcores()
 	{
 		_num_pcores = _mon_manager.get_num_cores();
-
+		_num_cores=_num_pcores;
+		PDBG("Num cores=%d\n", _num_cores);
 		return 0;
 	}
 
@@ -192,6 +197,11 @@ namespace Sched_controller {
 	int Sched_controller::get_num_rqs()
 	{
 		return _num_rqs;
+	}
+
+	int Sched_controller::get_num_cores()
+	{
+		return _num_cores;
 	}
 
 	/**
@@ -279,8 +289,6 @@ namespace Sched_controller {
 	Sched_controller::Sched_controller()
 	{
 
-		_init_rqs(128);
-
 		mon_ds_cap=_mon_manager.init_ds_cap(100);
 		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
 
@@ -293,6 +301,8 @@ namespace Sched_controller {
 		/* Now lets create the runqueues we're working with */
 		_init_runqueues();
 
+		//_init_rqs(128);
+
 		/*
 		 * After we know about our run queues, we will assign them to the pcores.
 		 * Currently we have 4 run queues and 4 pcores. Hence we can make a fixed
@@ -304,9 +314,14 @@ namespace Sched_controller {
 		for (int i = 0; i < _num_rqs; i++) {
 			std::pair<Pcore*, Runqueue*> _pcore_rq_pair (_pcore + i, _runqueue + i);
 			_pcore_rq_association.insert(_pcore_rq_pair);
-			PINF("Allocated rq_buffer %d to _pcore %d", i, i);
+			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
-
+		Timer::Connection timer;
+		timer.msleep(1000);
+		
+		Genode::Signal_transmitter transmitter(rec.manage(&rec_context));
+		PDBG("Submit Signal");
+		transmitter.submit();
 	}
 
 	Sched_controller::~Sched_controller()

@@ -23,6 +23,7 @@
 #include <timer_session/connection.h>
 #include "sched_controller/rq_buffer.h"
 #include "rq_task/rq_task.h"
+#include <base/signal.h>
 
 namespace Sched_controller
 {
@@ -50,7 +51,9 @@ namespace Sched_controller
 			Pcore *_pcore;                                                    /* Array of pcores */
 			Runqueue *_runqueue;                                              /* Array of runqueues */
 			std::unordered_multimap<Pcore*, Runqueue*> _pcore_rq_association; /* which pcore hosts which rq */
-			Rq_buffer<Rq_task::Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */			
+			Rq_buffer<Rq_task::Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */
+			Genode::Signal_receiver rec;
+			Genode::Signal_context rec_context;			
 			
 			int _set_num_pcores();
 			int _init_rqs(int);
@@ -69,6 +72,7 @@ namespace Sched_controller
 			std::forward_list<Pcore*> get_unused_cores();
 			void set_sync_ds(Genode::Dataspace_capability);
 			int are_you_ready();
+			int get_num_cores();
 
 			Sched_controller();
 			~Sched_controller();
