@@ -11,7 +11,7 @@ create_boot_directory
 #
 
 install_config {
-<config>
+<config prio_levels="128">
     <parent-provides>
 		<service name="CAP"/>
         <service name="CPU"/>
@@ -29,24 +29,23 @@ install_config {
     <default-route>
         <any-service> <parent/> <any-child/> </any-service>
     </default-route>
-    <start name="timer">
+    <start name="timer" priority="0">
         <resource name="RAM" quantum="1M"/>
         <provides><service name="Timer"/></provides>
     </start>
-    <start name="sched_controller">
+    <start name="sched_controller" priority="0">
         <resource name="RAM" quantum="8M"/>
         <provides><service name="Sched_controller"/></provides>
     </start>
-    <start name="gen_load">
-        <resource name="RAM" quantum="8M"/>
-        <provides><service name="Gen_load"/></provides>
-    </start>
-    <start name="mon_manager">
+    <start name="mon_manager" priority="0">
         <resource name="RAM" quantum="8M"/>
         <provides><service name="mon_manager"/></provides>
     </start>
-    <start name="sync_client">
+    <start name="sync_client" priority="0">
 	<resource name="RAM" quantum="40M"/>
+    </start>
+    <start name="gen_load" priority="0">
+	<resource name="RAM" quantum="10M"/>
     </start>
 </config>}
 
