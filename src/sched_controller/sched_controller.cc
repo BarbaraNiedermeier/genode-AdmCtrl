@@ -234,22 +234,24 @@ namespace Sched_controller {
 	 *         core/runqueu, the utilization might also be
 	 *         > 1.
 	 */
-	double Sched_controller::get_utilization(int rq) {
-		/* This is a mock, only for testing purposes */
-
-		Timer::Connection _timer;
-		unsigned long time_ms = _timer.elapsed_ms();
-
-		std::string seed_str = std::to_string(time_ms);
-		//PINF("The elapsed time for the seed is: %ld", time_ms);
-
-		std::default_random_engine generator;
-		std::seed_seq seed1 (seed_str.begin(),seed_str.end());
-
-		generator.seed(seed1);
-		std::uniform_real_distribution<double> distribution(0.0,1.0);
-
-		return distribution(generator);
+	double Sched_controller::get_utilization(int core) {
+			Timer::Connection timer;
+			timer.msleep(1000);
+			double util0=1000-(_mon_manager.get_idle_time(0).value-idlelast0.value)/1000000;
+			idlelast0=_mon_manager.get_idle_time(0);
+			double util1=1000-(_mon_manager.get_idle_time(1).value-idlelast1.value)/1000000;
+			idlelast1=_mon_manager.get_idle_time(1);
+			double util2=1000-(_mon_manager.get_idle_time(2).value-idlelast2.value)/1000000;
+			idlelast2=_mon_manager.get_idle_time(2);
+			double util3=1000-(_mon_manager.get_idle_time(3).value-idlelast3.value)/1000000;
+			idlelast3=_mon_manager.get_idle_time(3);
+			switch(core){
+				case 0:return util0;
+				case 1:return util1;
+				case 2:return util2;
+				case 3:return util3;
+				default:return -1;
+			}
 	}
 
 	/**
@@ -288,9 +290,15 @@ namespace Sched_controller {
 
 	Sched_controller::Sched_controller()
 	{
-
-		mon_ds_cap=_mon_manager.init_ds_cap(100);
+		Genode::Dataspace_capability mon_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(Mon_manager::Monitoring_object));
 		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
+
+		Genode::Dataspace_capability rq_ds_cap = Genode::env()->ram_session()->alloc(101*sizeof(int));
+		int* rqs=Genode::env()->rm_session()->attach(rq_ds_cap);
+
+		_mon_manager.update_rqs(rq_ds_cap);
+
+		_mon_manager.update_info(mon_ds_cap);
 
 		/* We then need to figure out how many CPU cores are available at the system */
 		_set_num_pcores();
@@ -300,6 +308,11 @@ namespace Sched_controller {
 
 		/* Now lets create the runqueues we're working with */
 		_init_runqueues();
+
+		idlelast0=_mon_manager.get_idle_time(0);
+		idlelast1=_mon_manager.get_idle_time(1);
+		idlelast2=_mon_manager.get_idle_time(2);
+		idlelast3=_mon_manager.get_idle_time(3);
 
 		//_init_rqs(128);
 

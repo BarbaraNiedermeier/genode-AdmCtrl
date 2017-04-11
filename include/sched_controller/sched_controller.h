@@ -53,7 +53,11 @@ namespace Sched_controller
 			std::unordered_multimap<Pcore*, Runqueue*> _pcore_rq_association; /* which pcore hosts which rq */
 			Rq_buffer<Rq_task::Rq_task> *_rqs; /* array of ring buffers (Rq_buffer with fixed size) */
 			Genode::Signal_receiver rec;
-			Genode::Signal_context rec_context;			
+			Genode::Signal_context rec_context;
+			Genode::Trace::Execution_time idlelast0;
+			Genode::Trace::Execution_time idlelast1;
+			Genode::Trace::Execution_time idlelast2;
+			Genode::Trace::Execution_time idlelast3;			
 			
 			int _set_num_pcores();
 			int _init_rqs(int);

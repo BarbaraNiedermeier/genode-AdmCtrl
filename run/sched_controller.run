@@ -38,14 +38,11 @@ install_config {
         <provides><service name="Sched_controller"/></provides>
     </start>
     <start name="mon_manager" priority="0">
-        <resource name="RAM" quantum="8M"/>
+        <resource name="RAM" quantum="80M"/>
         <provides><service name="mon_manager"/></provides>
     </start>
     <start name="sync_client" priority="0">
 	<resource name="RAM" quantum="40M"/>
-    </start>
-    <start name="gen_load" priority="0">
-	<resource name="RAM" quantum="10M"/>
     </start>
 </config>}
 
