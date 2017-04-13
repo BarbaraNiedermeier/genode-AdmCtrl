@@ -38,7 +38,7 @@ namespace Sched_controller {
 		_rqs = new Rq_buffer<Rq_task::Rq_task>[_num_cores];
 
 		for (int i = 0; i < _num_cores; i++) {
-			_rqs[i].init_w_shared_ds(rq_size);
+			//_rqs[i].init_w_shared_ds(rq_size);
 		}
 		Genode::printf("New Rq_buffer created. Starting address is: %p.\n", _rqs);
 
@@ -92,14 +92,21 @@ namespace Sched_controller {
 
 	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)
 	{
+		PDBG("Got ds cap\n");
+		_num_cores=1;
 		sync_ds_cap=ds_cap;
-		_rqs=Genode::env()->rm_session()->attach(ds_cap);
+		_rqs = new Rq_buffer<Rq_task::Rq_task>[_num_cores];
+		for (int i = 0; i < _num_cores; i++) {
+			_rqs[i].init_w_shared_ds(sync_ds_cap);
+		}
+
+		Genode::printf("New Rq_buffer created. Starting address is: %p.\n", _rqs);
 	}
 
 	int Sched_controller::are_you_ready()
 	{
-		rec.wait_for_signal();
-		PDBG("Got signal");
+		the_cycle();
+		PDBG("Cycle done");
 		return 0;
 	}
 
@@ -235,23 +242,22 @@ namespace Sched_controller {
 	 *         > 1.
 	 */
 	double Sched_controller::get_utilization(int core) {
-			Timer::Connection timer;
-			timer.msleep(1000);
-			double util0=1000-(_mon_manager.get_idle_time(0).value-idlelast0.value)/1000000;
-			idlelast0=_mon_manager.get_idle_time(0);
-			double util1=1000-(_mon_manager.get_idle_time(1).value-idlelast1.value)/1000000;
-			idlelast1=_mon_manager.get_idle_time(1);
-			double util2=1000-(_mon_manager.get_idle_time(2).value-idlelast2.value)/1000000;
-			idlelast2=_mon_manager.get_idle_time(2);
-			double util3=1000-(_mon_manager.get_idle_time(3).value-idlelast3.value)/1000000;
-			idlelast3=_mon_manager.get_idle_time(3);
-			switch(core){
-				case 0:return util0;
-				case 1:return util1;
-				case 2:return util2;
-				case 3:return util3;
-				default:return -1;
-			}
+		idlelast0=_mon_manager.get_idle_time(0);
+		idlelast1=_mon_manager.get_idle_time(1);
+		idlelast2=_mon_manager.get_idle_time(2);
+		idlelast3=_mon_manager.get_idle_time(3);
+		Timer::Connection timer;
+		timer.msleep(100);
+		switch(core){
+			case 0:{//Genode::printf("%llu %llu\n", _mon_manager.get_idle_time(0).value,idlelast0.value);
+				double util0=1-(_mon_manager.get_idle_time(0).value-idlelast0.value)/100000;
+				idlelast0=_mon_manager.get_idle_time(0);
+				return util0;}
+			case 1:{double util1=1-(_mon_manager.get_idle_time(1).value-idlelast1.value)/100000;idlelast1=_mon_manager.get_idle_time(1);return util1;}
+			case 2:{double util2=1-(_mon_manager.get_idle_time(2).value-idlelast2.value)/100000;idlelast2=_mon_manager.get_idle_time(2);return util2;}
+			case 3:{double util3=1-(_mon_manager.get_idle_time(3).value-idlelast3.value)/100000;idlelast3=_mon_manager.get_idle_time(3);return util3;}
+			default:return -1;
+		}
 	}
 
 	/**
@@ -290,16 +296,6 @@ namespace Sched_controller {
 
 	Sched_controller::Sched_controller()
 	{
-		Genode::Dataspace_capability mon_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(Mon_manager::Monitoring_object));
-		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
-
-		Genode::Dataspace_capability rq_ds_cap = Genode::env()->ram_session()->alloc(101*sizeof(int));
-		int* rqs=Genode::env()->rm_session()->attach(rq_ds_cap);
-
-		_mon_manager.update_rqs(rq_ds_cap);
-
-		_mon_manager.update_info(mon_ds_cap);
-
 		/* We then need to figure out how many CPU cores are available at the system */
 		_set_num_pcores();
 
@@ -309,12 +305,22 @@ namespace Sched_controller {
 		/* Now lets create the runqueues we're working with */
 		_init_runqueues();
 
+		mon_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(Mon_manager::Monitoring_object));
+		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
+
+		rq_ds_cap = Genode::env()->ram_session()->alloc(101*sizeof(int));
+		rqs=Genode::env()->rm_session()->attach(rq_ds_cap);
+
+		_mon_manager.update_rqs(rq_ds_cap);
+
+		_mon_manager.update_info(mon_ds_cap);
+
 		idlelast0=_mon_manager.get_idle_time(0);
 		idlelast1=_mon_manager.get_idle_time(1);
 		idlelast2=_mon_manager.get_idle_time(2);
 		idlelast3=_mon_manager.get_idle_time(3);
 
-		//_init_rqs(128);
+		//_init_rqs(_num_rqs);
 
 		/*
 		 * After we know about our run queues, we will assign them to the pcores.
@@ -329,12 +335,6 @@ namespace Sched_controller {
 			_pcore_rq_association.insert(_pcore_rq_pair);
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
-		Timer::Connection timer;
-		timer.msleep(1000);
-		
-		Genode::Signal_transmitter transmitter(rec.manage(&rec_context));
-		PDBG("Submit Signal");
-		transmitter.submit();
 	}
 
 	Sched_controller::~Sched_controller()
@@ -342,5 +342,19 @@ namespace Sched_controller {
 
 	}
 
+	void Sched_controller::the_cycle() {
+		_mon_manager.update_rqs(rq_ds_cap);
+		PDBG("Elements %d\n",rqs[0]);
+		for(int i=1;i<=rqs[0];i++)
+		{
+			Rq_task::Rq_task task;
+			task.task_id = rqs[2*i-1];
+			task.task_class = Rq_task::Task_class::lo;
+			task.task_strategy = Rq_task::Task_strategy::priority;
+			task.prio = 128;
+			allocate_task(task);
+		}
+		PDBG("I'm a cycle\n");
+	}
 
 }

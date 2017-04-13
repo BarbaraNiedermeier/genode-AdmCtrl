@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer sched_controller mon_manager gen_load sync_client }
+build { core init drivers/timer sync_client sched_controller mon_manager  }
 
 create_boot_directory
 
@@ -34,11 +34,11 @@ install_config {
         <provides><service name="Timer"/></provides>
     </start>
     <start name="sched_controller" priority="0">
-        <resource name="RAM" quantum="8M"/>
+        <resource name="RAM" quantum="40M"/>
         <provides><service name="Sched_controller"/></provides>
     </start>
     <start name="mon_manager" priority="0">
-        <resource name="RAM" quantum="80M"/>
+        <resource name="RAM" quantum="40M"/>
         <provides><service name="mon_manager"/></provides>
     </start>
     <start name="sync_client" priority="0">
@@ -50,7 +50,7 @@ install_config {
 #Boot image
 #
 
-build_boot_image { core init timer sched_controller mon_manager gen_load sync_client ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+build_boot_image { core init timer sync_client sched_controller mon_manager  ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 

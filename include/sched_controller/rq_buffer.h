@@ -87,7 +87,7 @@ namespace Sched_controller
 			int deq(T**);    /* deque the element at the head */
 	//		T* deq_blk(int n); /* deque n elements beginning at the head */
 
-			void init_w_shared_ds(int);                                /* helper function for createing the Rq_buffer within a shared memory */
+			void init_w_shared_ds(Genode::Dataspace_capability);                                /* helper function for createing the Rq_buffer within a shared memory */
 			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
 
 			Rq_buffer();
@@ -106,9 +106,9 @@ namespace Sched_controller
 	 * \param n size of the buffer
 	 */
 	template <typename T>
-	void Rq_buffer<T>::init_w_shared_ds(int size)
+	void Rq_buffer<T>::init_w_shared_ds(Genode::Dataspace_capability __ds)
 	{
-
+		_ds=__ds;
 		/*
 		 * Set the size of the buffer and calculate the memory
 		 * that needs to be aquired for the shared dataspace.
@@ -116,8 +116,8 @@ namespace Sched_controller
 		 * element-pointers for buffer positions and the actual
 		 * circular buffer of type T.
 		 */
-		_buf_size = size;
-		int ds_size = (4 * sizeof(int)) + (_buf_size * sizeof(T));
+		_buf_size = 10000000000000;//size;
+		//int ds_size = (4 * sizeof(int)) + (_buf_size * sizeof(T));
 
 		/* 
 		 * create dataspace capability, i.e. mem is allocated,
@@ -125,8 +125,9 @@ namespace Sched_controller
 		 * allocated mem) to _ds_begin. Then all the variables
 		 * are set to the respective pointers in memory.
 		 */
-		_ds = Genode::env()->ram_session()->alloc(ds_size);
+		//_ds = Genode::env()->ram_session()->alloc(ds_size);
 		_ds_begin = Genode::env()->rm_session()->attach(_ds);
+		PDBG("rq buffer address: %d\n",_ds_begin);
 
 		char *_lockp = _ds_begin + (0 * sizeof(int));
 		char *_headp = _ds_begin + (1 * sizeof(int));
@@ -221,10 +222,12 @@ namespace Sched_controller
 	template <typename T>
 	int Rq_buffer<T>::deq(T **t)
 	{
-
+		
 		if ( Genode::cmpxchg(_lock, false, true) ) {
 
 			if (*_window >= _buf_size) {
+
+			PDBG("windows: %d buf size: %d\n",*_window,_buf_size);
 
 				PINF("The buffer is currently empty. Nothing to dequeue.");
 				*t = nullptr; /* returning null pointer so no old data is used by anyone */
@@ -234,6 +237,7 @@ namespace Sched_controller
 			} else {
 
 				*t = &_buf[*_head]; /* save address of the element located at the head */
+				
 				*_head += 1;           /* move head one position to the right */
 
 				/* check if end of array has been reached */

@@ -45,6 +45,8 @@ namespace Sched_controller
 			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
 			Genode::Dataspace_capability sync_ds_cap;
+			Genode::Dataspace_capability rq_ds_cap;
+			int* rqs;
 			int _num_rqs = 128;
 			int _num_pcores = 0;
 			int _num_cores = 0;
@@ -65,6 +67,7 @@ namespace Sched_controller
 			int _init_runqueues();
 			int enq(int, Rq_task::Rq_task);
 			int deq(int, Rq_task::Rq_task**);
+			void the_cycle();
 
 		public:
 

@@ -61,10 +61,21 @@ namespace Sched_controller {
 			 *       probably go for the load of the CPU or simply put it some-
 			 *       where.
 			 */
-
-
-			double util = 1.0;
 			int lowest_util_rq = -1;
+			double util = 1.0;
+			for(int i=0;i<sc->get_num_cores();i++)
+			{
+				double new_util=sc->get_utilization(i);
+				Genode::printf("util: %d\n",(int)new_util*1000);
+				if(new_util<util)
+				{
+					util=new_util;
+					lowest_util_rq=i;
+				}
+			}
+
+			
+			
 
 			for (auto it = rqs.begin(); it != rqs.end(); it++) {
 				double util_comp = sc->get_utilization((*it).rq_buffer);

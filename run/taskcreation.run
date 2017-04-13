@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core init drivers/timer sched_controller rq_manager test_taskcreator }
+build { core init drivers/timer sched_controller mon_manager test_taskcreator }
 
 create_boot_directory
 
@@ -31,13 +31,13 @@ install_config {
         <resource name="RAM" quantum="1M"/>
         <provides><service name="Timer"/></provides>
     </start>
-    <start name="rq_manager">
-        <resource name="RAM" quantum="8M"/>
-		<provides><service name="Rq_manager"/></provides>
-    </start>
     <start name="sched_controller">
         <resource name="RAM" quantum="8M"/>
         <provides><service name="Sched_controller"/></provides>
+    </start>
+    <start name="mon_manager">
+        <resource name="RAM" quantum="80M"/>
+        <provides><service name="mon_manager"/></provides>
     </start>
 	    <start name="test_taskcreator">
         <resource name="RAM" quantum="8M"/>
@@ -48,7 +48,7 @@ install_config {
 #Boot image
 #
 
-build_boot_image { core init timer rq_manager sched_controller test_taskcreator ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
+build_boot_image { core init timer sched_controller mon_manager test_taskcreator ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so }
 
 append qemu_args "-smp 4 -nographic "
 
