@@ -116,7 +116,7 @@ namespace Sched_controller
 		 * element-pointers for buffer positions and the actual
 		 * circular buffer of type T.
 		 */
-		_buf_size = 10000000000000;//size;
+		_buf_size = 10000;//size;
 		//int ds_size = (4 * sizeof(int)) + (_buf_size * sizeof(T));
 
 		/* 
@@ -226,8 +226,6 @@ namespace Sched_controller
 		if ( Genode::cmpxchg(_lock, false, true) ) {
 
 			if (*_window >= _buf_size) {
-
-			PDBG("windows: %d buf size: %d\n",*_window,_buf_size);
 
 				PINF("The buffer is currently empty. Nothing to dequeue.");
 				*t = nullptr; /* returning null pointer so no old data is used by anyone */

@@ -106,7 +106,6 @@ namespace Sched_controller {
 	int Sched_controller::are_you_ready()
 	{
 		the_cycle();
-		PDBG("Cycle done");
 		return 0;
 	}
 
@@ -249,8 +248,7 @@ namespace Sched_controller {
 		Timer::Connection timer;
 		timer.msleep(100);
 		switch(core){
-			case 0:{//Genode::printf("%llu %llu\n", _mon_manager.get_idle_time(0).value,idlelast0.value);
-				double util0=1-(_mon_manager.get_idle_time(0).value-idlelast0.value)/100000;
+			case 0:{double util0=1-(_mon_manager.get_idle_time(0).value-idlelast0.value)/100000;
 				idlelast0=_mon_manager.get_idle_time(0);
 				return util0;}
 			case 1:{double util1=1-(_mon_manager.get_idle_time(1).value-idlelast1.value)/100000;idlelast1=_mon_manager.get_idle_time(1);return util1;}
@@ -344,17 +342,15 @@ namespace Sched_controller {
 
 	void Sched_controller::the_cycle() {
 		_mon_manager.update_rqs(rq_ds_cap);
-		PDBG("Elements %d\n",rqs[0]);
 		for(int i=1;i<=rqs[0];i++)
 		{
 			Rq_task::Rq_task task;
 			task.task_id = rqs[2*i-1];
 			task.task_class = Rq_task::Task_class::lo;
 			task.task_strategy = Rq_task::Task_strategy::priority;
-			task.prio = 128;
-			allocate_task(task);
+			task.prio = rqs[2*i];
+			_rqs->enq(task);
 		}
-		PDBG("I'm a cycle\n");
 	}
 
 }

@@ -33,15 +33,15 @@ install_config {
         <resource name="RAM" quantum="1M"/>
         <provides><service name="Timer"/></provides>
     </start>
-    <start name="sched_controller" priority="0">
+    <start name="sched_controller" priority="-1">
         <resource name="RAM" quantum="40M"/>
         <provides><service name="Sched_controller"/></provides>
     </start>
-    <start name="mon_manager" priority="0">
+    <start name="mon_manager" priority="-2">
         <resource name="RAM" quantum="40M"/>
         <provides><service name="mon_manager"/></provides>
     </start>
-    <start name="sync_client" priority="0">
+    <start name="sync_client" priority="-3">
 	<resource name="RAM" quantum="40M"/>
     </start>
 </config>}
