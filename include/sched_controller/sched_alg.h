@@ -9,6 +9,7 @@
 
 namespace Sched_controller {
 
+	int RTA(int core, Rq_task::Rq_task new_task);
 	class Sched_alg {
 
 	};

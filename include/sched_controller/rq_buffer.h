@@ -87,6 +87,11 @@ namespace Sched_controller
 			int deq(T**);    /* deque the element at the head */
 	//		T* deq_blk(int n); /* deque n elements beginning at the head */
 
+			int get_num_elements(); //returns the number of elements within the buffer
+			T *get_first_element(); //returns a pointer to the first element from the buffer
+			T *get_next_element(T *curr_elem); //returns a pointer to the next element from the buffer
+			T *get_last_element(); //return a pointer to the last element from the buffer
+
 			void init_w_shared_ds(int);                                /* helper function for createing the Rq_buffer within a shared memory */
 			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
 
@@ -251,6 +256,41 @@ namespace Sched_controller
 		}
 
 		return 1; /* buffer empty */
+	}
+
+	template <typename T>
+	T *Rq_buffer<T>::get_first_element()
+	{
+		if (*_window >= _buf_size) {
+			PINF("The buffer is currently empty!");
+			return nullptr;
+		}
+		return &_buf[*_head];
+	}
+
+	template <typename T>
+	T *Rq_buffer<T>::get_next_element(T *curr_elem)
+	{
+		//TODO Check Implementation, not sure if it works
+		if (curr_elem + 1 > _tail &&  _head > _tail){
+			return curr_elem +1;
+		}
+	}
+
+	template <typename T>
+	T *Rq_buffer<T>::get_last_element()
+	{
+		if (*_window >= _buf_size) {
+			PINF("The buffer is currently empty!");
+			return nullptr;
+		}
+		return &_buf[*_tail];
+	}
+
+	template <typename T>
+	int Rq_buffer<T>::get_num_elements()
+	{
+		return (_buf_size - (_buf_size - *_window));
 	}
 
 	/*****************
