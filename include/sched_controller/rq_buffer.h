@@ -269,15 +269,6 @@ namespace Sched_controller
 	}
 
 	template <typename T>
-	T *Rq_buffer<T>::get_next_element(T *curr_elem)
-	{
-		//TODO Check Implementation, not sure if it works
-		if (curr_elem + 1 > _tail &&  _head > _tail){
-			return curr_elem +1;
-		}
-	}
-
-	template <typename T>
 	T *Rq_buffer<T>::get_last_element()
 	{
 		if (*_window >= _buf_size) {
