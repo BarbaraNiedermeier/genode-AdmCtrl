@@ -22,7 +22,7 @@ namespace Sched_controller {
 	 */
 	void Task_allocator::allocate_task(Sched_controller *sc, Rq_task::Rq_task *task)
 	{
-		PINF("Task allocator got the Task with id: %d", task->task_id);
+		PINF("Task allocator got the Task with id: %d prio: %d\n", task->task_id, task->prio);
 
 		/* First we need to check for the Task_class of the task */
 		if (task->task_class == Rq_task::Task_class::hi) {
@@ -61,10 +61,21 @@ namespace Sched_controller {
 			 *       probably go for the load of the CPU or simply put it some-
 			 *       where.
 			 */
-
-
+			int lowest_util_rq = 0;
 			double util = 1.0;
-			int lowest_util_rq = -1;
+			for(int i=0;i<sc->get_num_cores();i++)
+			{
+				double new_util=sc->get_utilization(i);
+				Genode::printf("util: %d\n",(int)new_util*1000);
+				if(new_util<util)
+				{
+					util=new_util;
+					lowest_util_rq=i;
+				}
+			}
+			
+			
+			
 
 			for (auto it = rqs.begin(); it != rqs.end(); it++) {
 				double util_comp = sc->get_utilization((*it).rq_buffer);
