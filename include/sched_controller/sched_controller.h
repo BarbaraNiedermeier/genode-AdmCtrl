@@ -24,6 +24,7 @@
 #include "sched_controller/rq_buffer.h"
 #include "rq_task/rq_task.h"
 #include <base/signal.h>
+#include "sched_controller/sched_alg.h"
 
 namespace Sched_controller
 {
@@ -68,6 +69,8 @@ namespace Sched_controller
 			int enq(int, Rq_task::Rq_task);
 			int deq(int, Rq_task::Rq_task**);
 			void the_cycle();
+
+			Sched_alg fp_alg;
 
 		public:
 

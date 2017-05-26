@@ -285,7 +285,8 @@ namespace Sched_controller
 	template <typename T>
 	int Rq_buffer<T>::get_num_elements()
 	{
-		return (_buf_size - (_buf_size - *_window));
+		//PDBG("BufSize = %d, Window = %d", _buf_size, *_window);
+		return (_buf_size - *_window);
 	}
 
 	/*****************

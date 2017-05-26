@@ -60,7 +60,9 @@ namespace Sched_controller {
 	{
 		PINF("Task is now enqueued to run queue %d", core);
 
-		if (core < _num_cores) {
+		if (core < _num_cores)
+		{
+			int result = fp_alg.RTA(&task, &_rqs[core]);
 			int success = _rqs[core].enq(task);
 			return success;
 		}

@@ -7,6 +7,7 @@
 #include <base/printf.h>
 #include "rq_task/rq_task.h"
 #include "sched_controller/sched_alg.h"
+#include <math.h>
 
 namespace Sched_controller {
 
@@ -15,13 +16,14 @@ namespace Sched_controller {
 		_curr_task = rq_buf->get_first_element();
 		while (true)
 		{
-			_response_time = 0;
-			_response_time += (_response_time_old / new_task->inter_arrival) * new_task->wcet;
+			_response_time = ceil(_response_time_old / new_task->inter_arrival) * new_task->wcet;
+			PINF("DEBUG0: _response_time = %d, wcet_new_task = %d, arrival_new_task = %d", _response_time, new_task->wcet, (int)new_task->inter_arrival);
 			for (int i=0; i<num_elements; ++i)
 			{
-				_response_time += (_response_time_old / _curr_task->inter_arrival) * _curr_task->wcet;
+				_response_time += ceil(_response_time_old / _curr_task->inter_arrival) * _curr_task->wcet;
 				_curr_task++;
 			}
+			PINF("DEBUG: _response_time = %d, _response_time_old = %d", _response_time, _response_time_old);
 
 			/*Since the response_time is increasing with each iteration, it has to be always
 			 * smaller then the deadline
@@ -37,7 +39,7 @@ namespace Sched_controller {
 				if (_response_time <= deadline)
 				{
 					//Task-Set is schedulable
-					PDBG("Task-Set is schedulable!");
+					PINF("Task-Set is schedulable! Response time = %d, deadline = %d", _response_time, deadline);
 					return 1;
 				}
 			}
@@ -47,7 +49,7 @@ namespace Sched_controller {
 	int Sched_alg::RTA(Rq_task::Rq_task *new_task, Rq_buffer<Rq_task::Rq_task> *rq_buf)
 	{
 		int num_elements = rq_buf->get_num_elements();
-		PDBG("There are currently %d elements in the rq_buffer", num_elements);
+		PINF("There are currently %d elements in the rq_buffer, new task has prio %d", num_elements, new_task->prio);
 
 		/*
 		 * Assuming that each task for schedulable if it is alone,
@@ -70,7 +72,7 @@ namespace Sched_controller {
 		_curr_task = rq_buf->get_first_element();
 		if (new_task->prio < rq_buf->get_last_element()->prio)
 		{
-			PDBG("New task has lower prio then all other tasks");
+			PINF("New task has lower prio then all other tasks");
 			if (_compute_repsonse_time(new_task, rq_buf, num_elements, new_task->deadline) <= 0)
 			{
 				//Task Set not schedulable
@@ -85,11 +87,11 @@ namespace Sched_controller {
 			 * Compute response time for all tasks with priority smaller
 			 * then the priority of the new task
 			 */
-			PDBG("New task has higher prio then lowest existing task");
+			PINF("New task has higher or the same prio then lowest existing task");
 			for (int i=0; i<num_elements; ++i)
 			{
 				_response_time_old = _curr_task->wcet;
-				if(_curr_task->prio < new_task->prio){
+				if(_curr_task->prio <= new_task->prio){
 					if (_compute_repsonse_time(new_task, rq_buf, i+1, _curr_task->deadline) <= 0)
 					{
 						//Task Set not schedulable
@@ -99,7 +101,7 @@ namespace Sched_controller {
 				++_curr_task;
 			}
 		}
-		PDBG("All Task-Sets passed the RTA Algorithm -> Task-Set schedulable!");
+		PINF("All Task-Sets passed the RTA Algorithm -> Task-Set schedulable!");
 		return 1;
 
 	}//RTA
@@ -115,26 +117,19 @@ namespace Sched_controller {
 			return 1;
 		}
 
-		double R_ub, sum_utilisation;
+		double R_ub, sum_utilisation = 0.0, sum_util_wcet = 0.0;
 		_curr_task = rq_buf->get_first_element();
 
 		for (int i=0; i<num_elements; ++i)
 		{
-			R_ub = _curr_task->wcet;
-			sum_utilisation = 0.0;
-			//for each task with smaller prio
-			for (int j=i; j>0; --j)
-			{
-				sum_utilisation += (_curr_task - j)->wcet / (_curr_task - j)->inter_arrival;
-				R_ub +=  ((_curr_task - j)->wcet * (1 - (_curr_task - j)->wcet / (_curr_task - j)->inter_arrival));
-			}
-
-			R_ub /= (1 - sum_utilisation);
+			R_ub = _curr_task->wcet * sum_util_wcet / (1 - sum_utilisation);
 			if (R_ub > _curr_task->wcet)
 			{
 				//Deadline hit for task i
 				PWRN("Deadline hit for task %d, Task set might be not schedulable! Maybe try an exact test.", _curr_task->task_id);
 			}
+			sum_utilisation += _curr_task->wcet / _curr_task->inter_arrival;
+			sum_util_wcet += _curr_task->wcet * (1 - sum_utilisation);
 		}
 
 		return 1;
