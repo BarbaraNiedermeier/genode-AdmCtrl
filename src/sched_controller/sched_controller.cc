@@ -341,7 +341,9 @@ namespace Sched_controller {
 	}
 
 	void Sched_controller::the_cycle() {
+		_rqs[0].init_w_shared_ds(sync_ds_cap);
 		_mon_manager.update_rqs(rq_ds_cap);
+		PDBG("the cycle admctrl\n");
 		for(int i=1;i<=rqs[0];i++)
 		{
 			Rq_task::Rq_task task;
@@ -349,6 +351,7 @@ namespace Sched_controller {
 			task.task_class = Rq_task::Task_class::lo;
 			task.task_strategy = Rq_task::Task_strategy::priority;
 			task.prio = rqs[2*i];
+			PDBG("enqueue task\n");
 			_rqs->enq(task);
 		}
 	}
