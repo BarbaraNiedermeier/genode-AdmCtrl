@@ -241,20 +241,12 @@ namespace Sched_controller {
 	 *         > 1.
 	 */
 	double Sched_controller::get_utilization(int core) {
-		idlelast0=_mon_manager.get_idle_time(0);
-		idlelast1=_mon_manager.get_idle_time(1);
-		idlelast2=_mon_manager.get_idle_time(2);
-		idlelast3=_mon_manager.get_idle_time(3);
-		Timer::Connection timer;
-		timer.msleep(100);
 		switch(core){
-			case 0:{double util0=1-(_mon_manager.get_idle_time(0).value-idlelast0.value)/100000;
-				idlelast0=_mon_manager.get_idle_time(0);
-				return util0;}
-			case 1:{double util1=1-(_mon_manager.get_idle_time(1).value-idlelast1.value)/100000;idlelast1=_mon_manager.get_idle_time(1);return util1;}
-			case 2:{double util2=1-(_mon_manager.get_idle_time(2).value-idlelast2.value)/100000;idlelast2=_mon_manager.get_idle_time(2);return util2;}
-			case 3:{double util3=1-(_mon_manager.get_idle_time(3).value-idlelast3.value)/100000;idlelast3=_mon_manager.get_idle_time(3);return util3;}
-			default:return -1;
+			case 0:	return _mon_manager.get_util(0);
+			case 1: return _mon_manager.get_util(1);
+			case 2: return _mon_manager.get_util(2);
+			case 3: return _mon_manager.get_util(3);
+			default: return -1;
 		}
 	}
 
@@ -352,7 +344,8 @@ namespace Sched_controller {
 			task.task_strategy = Rq_task::Task_strategy::priority;
 			task.prio = rqs[2*i];
 			PDBG("enqueue task\n");
-			_rqs->enq(task);
+			allocate_task(task);
+			//_rqs->enq(task);
 		}
 	}
 
