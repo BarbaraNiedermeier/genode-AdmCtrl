@@ -62,11 +62,18 @@ namespace Sched_controller {
 
 		if (core < _num_cores)
 		{
-			int result = fp_alg.RTA(&task, &_rqs[core]);
+			//Execute sufficient schedulability test
+			if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
+			{
+				//If sufficient test fails --> execute RTA (exact test)
+				if (!fp_alg.RTA(&task, &_rqs[core])){
+					return -1;
+				}
+			}
+
 			int success = _rqs[core].enq(task);
 			return success;
 		}
-
 
 		return -1;
 
@@ -90,6 +97,17 @@ namespace Sched_controller {
 		}
 
 		return -1;
+	}
+
+	Genode::Dataspace_capability Sched_controller::init_ds(int num_rqs, int num_cores)
+	{
+		int ds_size = num_cores*(4 * sizeof(int)) + (num_rqs * sizeof(Rq_task::Rq_task));
+		Genode::Dataspace_capability _ds=Genode::env()->ram_session()->alloc(ds_size);
+		_rqs = new Rq_buffer<Rq_task::Rq_task>[num_cores];
+		for (int i = 0; i < num_cores; i++) {
+			_rqs[i].init_w_shared_ds(_ds);
+		}
+		return _ds;
 	}
 
 	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)

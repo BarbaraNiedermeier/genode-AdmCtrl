@@ -66,7 +66,7 @@ namespace Sched_controller
 			int _init_rqs(int);
 			int _init_pcores();
 			int _init_runqueues();
-			int enq(int, Rq_task::Rq_task);
+
 			int deq(int, Rq_task::Rq_task**);
 			void the_cycle();
 
@@ -74,12 +74,14 @@ namespace Sched_controller
 
 		public:
 
+			int enq(int, Rq_task::Rq_task);
 			void allocate_task(Rq_task::Rq_task);
 			void task_to_rq(int, Rq_task::Rq_task*);
 			int get_num_rqs();
 			void which_runqueues(std::vector<Runqueue>*, Rq_task::Task_class, Rq_task::Task_strategy);
 			double get_utilization(int);
 			std::forward_list<Pcore*> get_unused_cores();
+			Genode::Dataspace_capability init_ds(int num_rqs, int num_cores);
 			void set_sync_ds(Genode::Dataspace_capability);
 			int are_you_ready();
 			int get_num_cores();
