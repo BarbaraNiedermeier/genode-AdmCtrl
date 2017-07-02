@@ -20,7 +20,7 @@ namespace Sched_controller {
 
 			Genode::Connection<Sched_controller::Session>(session("foo, ram_quota=4096")),
 
-			Session_client(cap()) { PDBG("Baum"); }
+			Session_client(cap()) {}
 	};
 
 }

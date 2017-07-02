@@ -21,9 +21,9 @@ namespace Rq_task
 			int task_id;
 			Task_class task_class;
 			Task_strategy task_strategy;
-			float deadline;
-			float wcet;
-			float inter_arrival;
+			unsigned long long deadline;
+			unsigned long long wcet;
+			unsigned long long inter_arrival;
 			int prio;
 			bool valid;
 

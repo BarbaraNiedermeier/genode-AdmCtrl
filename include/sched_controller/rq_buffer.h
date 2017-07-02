@@ -90,9 +90,8 @@ namespace Sched_controller
 
 			int get_num_elements(); //returns the number of elements within the buffer
 			T *get_first_element(); //returns a pointer to the first element from the buffer
-			T *get_next_element(T *curr_elem); //returns a pointer to the next element from the buffer
 			T *get_last_element(); //return a pointer to the last element from the buffer
-			
+
 			void init_w_shared_ds(Genode::Dataspace_capability);                                /* helper function for createing the Rq_buffer within a shared memory */
 
 			Genode::Dataspace_capability get_ds_cap() { return _ds; }; /* return the dataspace capability */
@@ -279,7 +278,7 @@ namespace Sched_controller
 			PINF("The buffer is currently empty!");
 			return nullptr;
 		}
-		return &_buf[*_tail];
+		return (&_buf[*_tail-1]);
 	}
 
 	template <typename T>

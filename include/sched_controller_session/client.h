@@ -27,9 +27,9 @@ namespace Sched_controller {
 			call<Rpc_get_init_status>();
 		}
 
-		void new_task(Rq_task::Rq_task task)
+		int new_task(Rq_task::Rq_task task)
 		{
-			call<Rpc_new_task>(task);
+			return call<Rpc_new_task>(task);
 		}
 
 		void set_sync_ds(Genode::Dataspace_capability ds_cap)
@@ -39,7 +39,7 @@ namespace Sched_controller {
 
 		int are_you_ready()
 		{
-			call<Rpc_are_you_ready>();
+			return call<Rpc_are_you_ready>();
 		}
 
 	};
