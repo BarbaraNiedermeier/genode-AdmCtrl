@@ -114,6 +114,7 @@ namespace Sched_controller
 	template <typename T>
 	void Rq_buffer<T>::init_w_shared_ds(Genode::Dataspace_capability __ds)
 	{
+		Genode::env()->rm_session()->detach(_ds_begin);
 		_ds=__ds;
 		/*
 		 * Set the size of the buffer and calculate the memory
