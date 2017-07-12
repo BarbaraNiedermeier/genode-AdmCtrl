@@ -15,6 +15,11 @@
 #include <unordered_map>
 #include <base/printf.h>
 
+/* for optimize function */
+#include <util/xml_node.h>
+#include <util/xml_generator.h>
+/* ******************************** */
+
 #include "sched_controller/sched_controller.h"
 #include "sched_controller/task_allocator.h"
 #include "sched_controller/monitor.h"
@@ -205,6 +210,7 @@ namespace Sched_controller {
 	void Sched_controller::allocate_task(Rq_task::Rq_task task)
 	{
 
+		PDBG("BN ----------------- allocate_task -----------------------");
 		PINF("Start allocating Task with id %d", task.task_id);
 		Task_allocator::allocate_task(this, &task);
 
@@ -212,10 +218,67 @@ namespace Sched_controller {
 
 	void Sched_controller::task_to_rq(int rq, Rq_task::Rq_task *task) {
 		//PINF("Number of RQs: %d", _rq_manager.get_num_rqs());
+		PDBG("BN ---------------- Sched_controller-task_to_rq -------------");
 		int status = enq(rq, *task);
 		//PDBG("%d", status);
 		return;
 	}
+
+
+
+
+
+
+	/**
+	* BN - Optimize task scheduling
+	*
+	*/
+	void Sched_controller::optimize(Genode::Ram_dataspace_capability xml_ds_cap)
+	{
+		PDBG("BN ------------- arrived in optimize -----------");
+
+		/*
+		 * To-Do:
+		 * Es gibt eine Funktion, zur Festlegung des Optimier-Ziels, welches durch XML-Dokument übergeben wird.
+		 * Diese Funktion wird aufgerufen, wenn das XML-Dokument erhalten wird.
+		 * Dann wird mit folgendem das Optimierziel nach out.data gespeichert.
+		 *	std::vector<char> out(max_len);
+		 *	node.sub_node(type).value(out.data(), max_len);
+		 *	return out.data();
+		 * Wenn das Optimierziel festgelegt ist, wird die optimierung durch die Optimize-Funktion durchgeführt.
+		 * Neues Struct OptimizeGoal {none, fairness, utilization, ?}
+		 * 
+		*/
+
+		/* 
+		 * Dieser Abschnitt ist akteull noch analog zu Taskloader_session_component::add_tasks(xml_ds_cap).
+		 * Hier muss noch der Monitor-Manager abgefragt werden, 
+		 * den Soll- mit dem Ist-Zustand verglichen werden,
+		 * und dementsprechend die Taks im Rq_buffer beeinflussen.
+		*/
+
+		/*
+		Genode::Rm_session* rm = Genode::env()->rm_session();
+		const char* xml = rm->attach(xml_ds_cap);
+		PDBG("Parsing XML file:\n%s", xml);
+		Genode::Xml_node root(xml);
+
+		const auto fn = [this] (const Genode::Xml_node& node)
+		{
+			PDBG("Watch XML node: %s", node);
+		};
+		root.for_each_sub_node("optimize", fn);
+		rm->detach(xml);
+		*/
+		
+	}
+	
+
+
+
+
+
+
 
 	/**
 	 *

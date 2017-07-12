@@ -88,6 +88,7 @@ namespace Sched_controller
 			int are_you_ready();
 			int get_num_cores();
 			int update_rq_buffer(int core);
+			void optimize (Genode::Ram_dataspace_capability);
 
 			Sched_controller();
 			~Sched_controller();

@@ -46,6 +46,11 @@ namespace Sched_controller {
 		{
 			return call<Rpc_update_rq_buffer>(core);
 		}
+		void optimize (Genode::Ram_dataspace_capability xml_ds_cap)
+		{
+			PDBG("Calling Rpc-Interface function to optimize task scheduluing.");
+			call<Rpc_optimize>(xml_ds_cap);
+		}
 
 	};
 }
