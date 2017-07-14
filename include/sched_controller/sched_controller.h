@@ -35,6 +35,12 @@ namespace Sched_controller
 		int rq_buffer;
 
 	};
+	
+	enum Optimization_goal {
+		NONE,
+		FAIRNESS,
+		UTILIZATION
+	};
 
 	class Sched_controller
 	{
@@ -63,7 +69,8 @@ namespace Sched_controller
 			Genode::Trace::Execution_time idlelast2;
 			Genode::Trace::Execution_time idlelast3;
 			std::unordered_map<std::string, Rq_task::Rq_task> task_map;
-
+			Optimization_goal opt_goal;
+			
 			int _set_num_pcores();
 			int _init_rqs(int);
 			int _init_pcores();
@@ -88,12 +95,14 @@ namespace Sched_controller
 			int are_you_ready();
 			int get_num_cores();
 			int update_rq_buffer(int core);
-			void optimize (Genode::Ram_dataspace_capability);
+			void set_opt_goal(Genode::Ram_dataspace_capability);
+			void optimize();
 
 			Sched_controller();
 			~Sched_controller();
 
 	};
+	
 
 }
 

@@ -18,6 +18,7 @@
 /* for optimize function */
 #include <util/xml_node.h>
 #include <util/xml_generator.h>
+#include <typeinfo>
 /* ******************************** */
 
 #include "sched_controller/sched_controller.h"
@@ -210,7 +211,6 @@ namespace Sched_controller {
 	void Sched_controller::allocate_task(Rq_task::Rq_task task)
 	{
 
-		PDBG("BN ----------------- allocate_task -----------------------");
 		PINF("Start allocating Task with id %d", task.task_id);
 		Task_allocator::allocate_task(this, &task);
 
@@ -218,7 +218,6 @@ namespace Sched_controller {
 
 	void Sched_controller::task_to_rq(int rq, Rq_task::Rq_task *task) {
 		//PINF("Number of RQs: %d", _rq_manager.get_num_rqs());
-		PDBG("BN ---------------- Sched_controller-task_to_rq -------------");
 		int status = enq(rq, *task);
 		//PDBG("%d", status);
 		return;
@@ -233,10 +232,10 @@ namespace Sched_controller {
 	* BN - Optimize task scheduling
 	*
 	*/
-	void Sched_controller::optimize(Genode::Ram_dataspace_capability xml_ds_cap)
+	void Sched_controller::set_opt_goal(Genode::Ram_dataspace_capability xml_ds_cap)
 	{
-		PDBG("BN ------------- arrived in optimize -----------");
-
+		
+		
 		/*
 		 * To-Do:
 		 * Es gibt eine Funktion, zur Festlegung des Optimier-Ziels, welches durch XML-Dokument übergeben wird.
@@ -246,32 +245,72 @@ namespace Sched_controller {
 		 *	node.sub_node(type).value(out.data(), max_len);
 		 *	return out.data();
 		 * Wenn das Optimierziel festgelegt ist, wird die optimierung durch die Optimize-Funktion durchgeführt.
-		 * Neues Struct OptimizeGoal {none, fairness, utilization, ?}
+		 * Neues Struct Optimization_goal {none, fairness, utilization, ?}
 		 * 
 		*/
 
+		PDBG("BN ------------- arrived in set_opt_goal -----------");
+		
 		/* 
-		 * Dieser Abschnitt ist akteull noch analog zu Taskloader_session_component::add_tasks(xml_ds_cap).
-		 * Hier muss noch der Monitor-Manager abgefragt werden, 
-		 * den Soll- mit dem Ist-Zustand verglichen werden,
-		 * und dementsprechend die Taks im Rq_buffer beeinflussen.
+		 * Dieser Abschnitt ist analog zu Taskloader_session_component::add_tasks(xml_ds_cap).
 		*/
-
-		/*
+		
 		Genode::Rm_session* rm = Genode::env()->rm_session();
-		const char* xml = rm->attach(xml_ds_cap);
-		PDBG("Parsing XML file:\n%s", xml);
+		const char* xml = rm->attach(xml_ds_cap);		
+		PDBG("Optimizer - Parsing XML file.");
 		Genode::Xml_node root(xml);
+
 
 		const auto fn = [this] (const Genode::Xml_node& node)
 		{
-			PDBG("Watch XML node: %s", node);
+			int max_len = 32;
+			std::vector<char> none(max_len);
+			std::vector<char> fairness(max_len);
+			std::vector<char> utilization(max_len);
+			
+			node.sub_node("none").value(none.data(), none.size());
+			node.sub_node("fairness").value(fairness.data(), fairness.size());
+			node.sub_node("utilization").value(utilization.data(), utilization.size());
+						
+			if (none.data()[0] == '1') opt_goal = NONE;
+			else if (fairness.data()[0] == '1') opt_goal = FAIRNESS;
+			else if (utilization.data()[0] == '1') opt_goal = UTILIZATION;
+			else PDBG("no goal was selected.");
+			
 		};
 		root.for_each_sub_node("optimize", fn);
 		rm->detach(xml);
-		*/
 		
 	}
+
+
+	void Sched_controller::optimize()
+	{
+		PDBG("BN ------------- arrived in optimize -----------");
+		/*
+		 * To Do: optimierungen
+		*/
+		switch( opt_goal )
+		{
+			case NONE:
+				PDBG("Das Optimierungsziel 'none' ist angekommen.");
+				break;
+			case FAIRNESS:
+				PDBG("Das Optimierungsziel 'fairness' ist angekommen.");
+				optimize_fairness();
+				break;
+			case UTILIZATION:
+				PDBG("Das Optimierungsziel 'utilization' ist angekommen.");
+				break;	
+			default:
+				PDBG("The optimization goal was not determined.");
+				
+		}
+		
+		
+	}
+	
+	
 	
 
 
@@ -323,6 +362,8 @@ namespace Sched_controller {
 	 *         core/runqueu, the utilization might also be
 	 *         > 1.
 	 */
+	
+	/*
 	double Sched_controller::get_utilization(int core) {
 		switch(core){
 			case 0:	return _mon_manager.get_util(0);
@@ -330,6 +371,24 @@ namespace Sched_controller {
 			case 2: return _mon_manager.get_util(2);
 			case 3: return _mon_manager.get_util(3);
 			default: return -1;
+		}
+	}
+	*/
+	double Sched_controller::get_utilization(int core) {
+		idlelast0=_mon_manager.get_idle_time(0);
+		idlelast1=_mon_manager.get_idle_time(1);
+		idlelast2=_mon_manager.get_idle_time(2);
+		idlelast3=_mon_manager.get_idle_time(3);
+		Timer::Connection timer;
+		timer.msleep(100);
+		switch(core){
+			case 0:{double util0=1-(_mon_manager.get_idle_time(0).value-idlelast0.value)/100000;
+				idlelast0=_mon_manager.get_idle_time(0);
+				return util0;}
+			case 1:{double util1=1-(_mon_manager.get_idle_time(1).value-idlelast1.value)/100000;idlelast1=_mon_manager.get_idle_time(1);return util1;}
+			case 2:{double util2=1-(_mon_manager.get_idle_time(2).value-idlelast2.value)/100000;idlelast2=_mon_manager.get_idle_time(2);return util2;}
+			case 3:{double util3=1-(_mon_manager.get_idle_time(3).value-idlelast3.value)/100000;idlelast3=_mon_manager.get_idle_time(3);return util3;}
+			default:return -1;
 		}
 	}
 

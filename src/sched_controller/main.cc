@@ -53,9 +53,14 @@ namespace Sched_controller {
 				return _ctr->update_rq_buffer(core);
 			}
 
-			void optimize (Genode::Ram_dataspace_capability xml_ds_cap)
+			void optimize ()
 			{
-				_ctr->optimize(xml_ds_cap);
+				_ctr->optimize();
+			}
+
+			void set_opt_goal (Genode::Ram_dataspace_capability xml_ds_cap)
+			{
+				_ctr->set_opt_goal(xml_ds_cap);
 			}
 
 			/* Session_component constructor enhanced by Sched_controller object */
