@@ -45,6 +45,7 @@ namespace Sched_controller
 			Mon_manager::Connection _mon_manager;
 			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
+			std::vector<Genode::Dataspace_capability> sync_ds_cap_vector;
 			Genode::Dataspace_capability sync_ds_cap;
 			Genode::Dataspace_capability rq_ds_cap;
 			int* rqs;
@@ -81,10 +82,11 @@ namespace Sched_controller
 			void which_runqueues(std::vector<Runqueue>*, Rq_task::Task_class, Rq_task::Task_strategy);
 			double get_utilization(int);
 			std::forward_list<Pcore*> get_unused_cores();
-			Genode::Dataspace_capability init_ds(int num_rqs, int num_cores);
+			void init_ds(int num_rqs, int num_cores);
 			void set_sync_ds(Genode::Dataspace_capability);
 			int are_you_ready();
 			int get_num_cores();
+			int update_rq_buffer(int core);
 
 			Sched_controller();
 			~Sched_controller();

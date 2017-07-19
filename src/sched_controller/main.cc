@@ -33,11 +33,11 @@ namespace Sched_controller {
 				PINF("sched_controller is initialized");
 			}
 
-			int new_task(Rq_task::Rq_task task)
+			int new_task(Rq_task::Rq_task task, int core)
 			{
 				PINF("Received new task with id: %d, prio: %d", task.task_id, task.prio);
 				PINF("deadline: %llu, wcet: %llu, period: %llu", task.deadline, task.wcet, task.inter_arrival);
-				int accepted = _ctr->enq(0, task);
+				int accepted = _ctr->enq(core, task);
 				PDBG("return value acceptet = %d", accepted);
 
 				return accepted;
@@ -52,6 +52,12 @@ namespace Sched_controller {
 			{
 				return _ctr->are_you_ready();
 			}
+
+			int update_rq_buffer(int core)
+			{
+				return _ctr->update_rq_buffer(core);
+			}
+
 
 			/* Session_component constructor enhanced by Sched_controller object */
 			Session_component(Sched_controller *ctr)
@@ -98,7 +104,7 @@ int main(void)
 {
 
 	Sched_controller::Sched_controller ctr;
-	ctr.init_ds(32,1);
+	ctr.init_ds(32,2);
 
 	Cap_connection cap;
 

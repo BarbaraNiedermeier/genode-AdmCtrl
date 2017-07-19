@@ -62,15 +62,25 @@ namespace Sched_controller {
 
 		if (core < _num_cores)
 		{
+			long long unsigned start_suff = 0, end_suff = 0, start_rta = 0, end_rta = 0;
+			bool suff_test, rta_test;
+			asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (start_suff));
+			suff_test = fp_alg.fp_sufficient_test(&task, &_rqs[core]);
+			asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (end_suff));
 			//Execute sufficient schedulability test
-			if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
+			//if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
+			if (!suff_test)
 			{
 				//If sufficient test fails --> execute RTA (exact test)
-				if (!fp_alg.RTA(&task, &_rqs[core])){
+				asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (start_rta));
+				rta_test = fp_alg.RTA(&task, &_rqs[core]);
+				asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (end_rta));
+				if (!rta_test){
 					return -1;
 				}
 			}
-
+			PINF("time for scheduling decision sufficient: %llu, start: %llu, end: %llu, RTA: %llu, start_rta: %llu, end_rta: %llu", (end_suff-start_suff),
+				start_suff, end_suff, (end_rta - start_rta), start_rta, end_rta);
 			int success = _rqs[core].enq(task);
 			return success;
 		}
@@ -99,15 +109,14 @@ namespace Sched_controller {
 		return -1;
 	}
 
-	Genode::Dataspace_capability Sched_controller::init_ds(int num_rqs, int num_cores)
+	void Sched_controller::init_ds(int num_rqs, int num_cores)
 	{
 		int ds_size = num_cores*(4 * sizeof(int)) + (num_rqs * sizeof(Rq_task::Rq_task));
-		Genode::Dataspace_capability _ds=Genode::env()->ram_session()->alloc(ds_size);
 		_rqs = new Rq_buffer<Rq_task::Rq_task>[num_cores];
 		for (int i = 0; i < num_cores; i++) {
-			_rqs[i].init_w_shared_ds(_ds);
+			sync_ds_cap_vector.emplace_back(Genode::env()->ram_session()->alloc(ds_size));
+			_rqs[i].init_w_shared_ds(sync_ds_cap_vector.back());
 		}
-		return _ds;
 	}
 
 	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)
@@ -359,6 +368,13 @@ namespace Sched_controller {
 	{
 
 	}
+
+	int Sched_controller::update_rq_buffer(int core)
+	{
+		PINF("Update Rq_buffer!");
+		return 0;
+	}
+
 
 	void Sched_controller::the_cycle() {
 		_rqs[0].init_w_shared_ds(sync_ds_cap);
