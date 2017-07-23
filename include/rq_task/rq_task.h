@@ -8,6 +8,8 @@
 #ifndef _INCLUDE__RQ_TASK__RQ_TASK_H_
 #define _INCLUDE__RQ_TASK__RQ_TASK_H_
 
+#include <string>
+
 namespace Rq_task
 {
 
@@ -26,6 +28,7 @@ namespace Rq_task
 			unsigned long long inter_arrival;
 			int prio;
 			bool valid;
+			char name[24];
 
 	};
 }

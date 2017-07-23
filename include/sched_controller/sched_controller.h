@@ -61,8 +61,9 @@ namespace Sched_controller
 			Genode::Trace::Execution_time idlelast0;
 			Genode::Trace::Execution_time idlelast1;
 			Genode::Trace::Execution_time idlelast2;
-			Genode::Trace::Execution_time idlelast3;			
-			
+			Genode::Trace::Execution_time idlelast3;
+			std::unordered_map<std::string, Rq_task::Rq_task> task_map;
+
 			int _set_num_pcores();
 			int _init_rqs(int);
 			int _init_pcores();
