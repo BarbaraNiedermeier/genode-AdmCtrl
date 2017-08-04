@@ -17,8 +17,7 @@
 #include <vector>
 
 #include "mon_manager/mon_manager_connection.h"
-#include "mon_manager/mon_manager_client.h"
-#include "mon_manager/mon_manager.h"
+#include "sync/sync_connection.h"
 #include "sched_controller/pcore.h"
 #include <timer_session/connection.h>
 #include "sched_controller/rq_buffer.h"
@@ -42,6 +41,7 @@ namespace Sched_controller
 		private:
 
 			Mon_manager::Connection _mon_manager;
+			Sync::Connection sync;
 			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
 			Genode::Dataspace_capability sync_ds_cap;
