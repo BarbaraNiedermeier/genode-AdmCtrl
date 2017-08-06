@@ -62,11 +62,11 @@ namespace Sched_controller {
 			 *       where.
 			 */
 			int lowest_util_rq = 0;
-			double util = 1.0;
+			int util = 100;
 			for(int i=0;i<sc->get_num_cores();i++)
 			{
-				double new_util=sc->get_utilization(i);
-				Genode::printf("util: %d\n",(int)new_util*1000);
+				int new_util=sc->get_utilization(i);
+				Genode::printf("util: %d\n",new_util);
 				if(new_util<util)
 				{
 					util=new_util;
@@ -78,7 +78,7 @@ namespace Sched_controller {
 			
 
 			for (auto it = rqs.begin(); it != rqs.end(); it++) {
-				double util_comp = sc->get_utilization((*it).rq_buffer);
+				int util_comp = sc->get_utilization((*it).rq_buffer);
 				//PINF("The utilization of run queue %d is %d and the lowest utilization is currently %d", (*it).rq_buffer, (int) (100 * util_comp), (int) (100 * util));
 				if (util_comp < util) {
 					lowest_util_rq = (*it).rq_buffer;
