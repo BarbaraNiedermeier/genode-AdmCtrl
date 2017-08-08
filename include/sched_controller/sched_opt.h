@@ -36,30 +36,16 @@ namespace Sched_controller {
 		// Pointer zu task
 		Rq_task::Rq_task** task_ptr;
 		
-		int		value;
-		
-		
 	};	
 	
 	class Sched_opt {
 		
 		private:
 			Optimization_goal _opt_goal;
-			//Optimization_task *_tasks; // Task array, oder ist list besser?
 			std::vector<Optimization_task> _tasks;
+			
 			Mon_manager::Connection *_mon_manager;
 			Genode::Dataspace_capability _mon_ds_cap;
-			
-			// Attributes needed for fairness optimization
-			int _accept; // Acceptance niveau for fairness optimization
-			int _min_task; // Array number of task with min value
-			int _max_task; // Array number of task with max value 
-			
-			
-			
-			void _optimize_fairness();
-			void _query_monitor();
-			bool _update_value(int, bool);
 			
 			void _deactivate_task();
 			
