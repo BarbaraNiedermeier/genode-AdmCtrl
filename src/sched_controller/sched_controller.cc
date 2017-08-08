@@ -82,10 +82,16 @@ namespace Sched_controller {
 			}
 			int success = _rqs[core].enq(task);
 			return success;
+
+			// do task optimization for lo tasks
+			if (task.task_class == Rq_task::Task_class::lo)
+			{
+				int success = _optimizer->add_task(core, task);
+				//int success = _rqs[core].enq(task);
+				return success;
+			}
 		}
-
-
-		_optimizer->add_task(core, task);
+		
 		return -1;
 	}
 
@@ -410,7 +416,9 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		_optimizer = new Sched_opt(&_mon_manager, mon_ds_cap);		
+		
+		_optimizer = new Sched_opt(_num_cores, _rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap);
+		//_optimizer = new Sched_opt(_num_cores, &_rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap, sync_ds_cap);		
 				
 		//loop forever
 		the_cycle();
