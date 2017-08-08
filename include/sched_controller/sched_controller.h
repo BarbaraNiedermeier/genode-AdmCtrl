@@ -25,6 +25,8 @@
 #include <base/signal.h>
 #include "sched_controller/sched_alg.h"
 
+#include "sched_controller/sched_opt.h"
+
 namespace Sched_controller
 {
 
@@ -35,12 +37,13 @@ namespace Sched_controller
 		int rq_buffer;
 
 	};
-	
+	/*
 	enum Optimization_goal {
 		NONE,
 		FAIRNESS,
 		UTILIZATION
 	};
+	*/
 
 	class Sched_controller
 	{
@@ -69,7 +72,8 @@ namespace Sched_controller
 			Genode::Trace::Execution_time idlelast2;
 			Genode::Trace::Execution_time idlelast3;
 			std::unordered_map<std::string, Rq_task::Rq_task> task_map;
-			Optimization_goal opt_goal;
+			Sched_opt *_optimizer;
+			
 			
 			int _set_num_pcores();
 			int _init_rqs(int);
@@ -78,6 +82,7 @@ namespace Sched_controller
 
 			int deq(int, Rq_task::Rq_task**);
 			void the_cycle();
+			
 
 			Sched_alg fp_alg;
 

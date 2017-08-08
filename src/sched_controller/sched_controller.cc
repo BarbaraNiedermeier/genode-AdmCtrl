@@ -83,6 +83,9 @@ namespace Sched_controller {
 			int success = _rqs[core].enq(task);
 			return success;
 		}
+
+
+		// _optimizer->add_task(core, task);
 		return -1;
 	}
 
@@ -234,85 +237,17 @@ namespace Sched_controller {
 	*/
 	void Sched_controller::set_opt_goal(Genode::Ram_dataspace_capability xml_ds_cap)
 	{
-		
-		
-		/*
-		 * To-Do:
-		 * Es gibt eine Funktion, zur Festlegung des Optimier-Ziels, welches durch XML-Dokument übergeben wird.
-		 * Diese Funktion wird aufgerufen, wenn das XML-Dokument erhalten wird.
-		 * Dann wird mit folgendem das Optimierziel nach out.data gespeichert.
-		 *	std::vector<char> out(max_len);
-		 *	node.sub_node(type).value(out.data(), max_len);
-		 *	return out.data();
-		 * Wenn das Optimierziel festgelegt ist, wird die optimierung durch die Optimize-Funktion durchgeführt.
-		 * Neues Struct Optimization_goal {none, fairness, utilization, ?}
-		 * 
-		*/
-
-		PDBG("BN ------------- arrived in set_opt_goal -----------");
-		
-		/* 
-		 * Dieser Abschnitt ist analog zu Taskloader_session_component::add_tasks(xml_ds_cap).
-		*/
-		
-		Genode::Rm_session* rm = Genode::env()->rm_session();
-		const char* xml = rm->attach(xml_ds_cap);		
-		PDBG("Optimizer - Parsing XML file.");
-		Genode::Xml_node root(xml);
-
-
-		const auto fn = [this] (const Genode::Xml_node& node)
-		{
-			int max_len = 32;
-			std::vector<char> none(max_len);
-			std::vector<char> fairness(max_len);
-			std::vector<char> utilization(max_len);
-			
-			node.sub_node("none").value(none.data(), none.size());
-			node.sub_node("fairness").value(fairness.data(), fairness.size());
-			node.sub_node("utilization").value(utilization.data(), utilization.size());
-						
-			if (none.data()[0] == '1') opt_goal = NONE;
-			else if (fairness.data()[0] == '1') opt_goal = FAIRNESS;
-			else if (utilization.data()[0] == '1') opt_goal = UTILIZATION;
-			else PDBG("no goal was selected.");
-			
-		};
-		root.for_each_sub_node("optimize", fn);
-		rm->detach(xml);
-		
+		_optimizer->set_goal(xml_ds_cap);
 	}
 
 
 	void Sched_controller::optimize()
 	{
-		PDBG("BN ------------- arrived in optimize -----------");
-		/*
-		 * To Do: optimierungen
-		*/
-		switch( opt_goal )
-		{
-			case NONE:
-				PDBG("Das Optimierungsziel 'none' ist angekommen.");
-				break;
-			case FAIRNESS:
-				PDBG("Das Optimierungsziel 'fairness' ist angekommen.");
-				optimize_fairness();
-				break;
-			case UTILIZATION:
-				PDBG("Das Optimierungsziel 'utilization' ist angekommen.");
-				break;	
-			default:
-				PDBG("The optimization goal was not determined.");
-				
-		}
-		
-		
+		_optimizer->start_optimizing();
 	}
 	
 	
 	
-
 
 
 
@@ -475,7 +410,8 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		
+		_optimizer = new Sched_opt(&_mon_manager, mon_ds_cap);		
+				
 		//loop forever
 		the_cycle();
 	}
