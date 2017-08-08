@@ -23,8 +23,7 @@ namespace Sched_controller {
 	void Sched_opt::set_goal(Genode::Ram_dataspace_capability xml_ds_cap)
 	{
 		Genode::Rm_session* rm = Genode::env()->rm_session();
-		const char* xml = rm->attach(xml_ds_cap);		
-		PDBG("Optimizer - Start parsing XML file.");
+		const char* xml = rm->attach(xml_ds_cap);
 		Genode::Xml_node root(xml);
 
 		const auto fn = [this] (const Genode::Xml_node& node)
@@ -44,16 +43,19 @@ namespace Sched_controller {
 			{
 				// optimization goal is set to fairness
 				_opt_goal = FAIRNESS;
+				PDBG("Optimizer - Set optimization goal to fairness.");
 			}
 			else if (std::stoi(util_goal.data()))
 			{
 				// optimization goal is set to utilization
 				_opt_goal = UTILIZATION;
+				PDBG("Optimizer - Set optimization goal to utilization.");
 			}
 			else
 			{
 				// no optimization goal is set
 				_opt_goal = NONE;
+				PDBG("Optimizer - Set optimization goal to none.");
 			}
 			
 			
@@ -61,7 +63,6 @@ namespace Sched_controller {
 		root.for_each_sub_node("goal", fn);
 		rm->detach(xml);
 		
-		PDBG("Optimizer - Finish parsing XML file.");
 	}
 	
 	
@@ -101,9 +102,11 @@ namespace Sched_controller {
 				break;
 			case FAIRNESS:
 				PDBG("The optimization goal 'fairness' has been chosen.");
+				PDBG("No optimization is done until now.");
 				break;
 			case UTILIZATION:
 				PDBG("The optimization goal 'utilization' has been chosen.");
+				PDBG("No optimization is done until now.");
 				break;	
 			default:
 				PDBG("No optimization goal has been chosen.");

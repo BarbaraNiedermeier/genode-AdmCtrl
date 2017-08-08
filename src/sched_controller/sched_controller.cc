@@ -85,7 +85,7 @@ namespace Sched_controller {
 		}
 
 
-		// _optimizer->add_task(core, task);
+		_optimizer->add_task(core, task);
 		return -1;
 	}
 
