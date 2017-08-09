@@ -342,9 +342,9 @@ namespace Sched_controller {
 	}
 
 	void Sched_controller::the_cycle() {
-		PDBG("the cycle admctrl\n");
 		_mon_manager.update_rqs(rq_ds_cap);
 		_rqs[0].init_w_shared_ds(sync_ds_cap);
+		_rqs[1].init_w_shared_ds(sync_ds_cap);
 		for(int i=1;i<=rqs[0];i++)
 		{
 			Rq_task::Rq_task task;
