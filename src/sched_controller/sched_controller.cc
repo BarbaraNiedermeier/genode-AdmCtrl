@@ -97,7 +97,7 @@ namespace Sched_controller {
 		sync_ds_cap=ds_cap;
 		_rqs = new Rq_buffer<Rq_task::Rq_task>[_num_cores];
 		for (int i = 0; i < _num_cores; i++) {
-			_rqs[i].init_w_shared_ds(sync_ds_cap);
+			//_rqs[i].init_w_shared_ds(sync_ds_cap);
 		}
 
 		Genode::printf("New Rq_buffer created. Starting address is: %p.\n", _rqs);
@@ -295,11 +295,16 @@ namespace Sched_controller {
 		/* Now lets create the runqueues we're working with */
 		_init_runqueues();
 
+		_rqs = new Rq_buffer<Rq_task::Rq_task>[_num_cores];
+
 		mon_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(Mon_manager::Monitoring_object));
 		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
 
 		rq_ds_cap = Genode::env()->ram_session()->alloc(101*sizeof(int));
 		rqs=Genode::env()->rm_session()->attach(rq_ds_cap);
+
+		sync_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(int));
+		_rqs[0].init_w_shared_ds(sync_ds_cap);
 
 		_mon_manager.update_rqs(rq_ds_cap);
 
@@ -325,6 +330,10 @@ namespace Sched_controller {
 			_pcore_rq_association.insert(_pcore_rq_pair);
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
+
+		
+		//loop forever
+		the_cycle();
 	}
 
 	Sched_controller::~Sched_controller()
@@ -333,9 +342,9 @@ namespace Sched_controller {
 	}
 
 	void Sched_controller::the_cycle() {
-		_rqs[0].init_w_shared_ds(sync_ds_cap);
-		_mon_manager.update_rqs(rq_ds_cap);
 		PDBG("the cycle admctrl\n");
+		_mon_manager.update_rqs(rq_ds_cap);
+		_rqs[0].init_w_shared_ds(sync_ds_cap);
 		for(int i=1;i<=rqs[0];i++)
 		{
 			Rq_task::Rq_task task;
@@ -347,6 +356,29 @@ namespace Sched_controller {
 			allocate_task(task);
 			//_rqs->enq(task);
 		}
+		//guess number of tasks in rq smaller than 50
+		Genode::Ram_dataspace_capability _ds=Genode::env()->ram_session()->alloc(100*sizeof(int));
+		int *list=Genode::env()->rm_session()->attach(_ds);;
+		//count number of tasks dequeued from rq buffer
+		int counter=1;
+		//object pointer to temporarily store dequeued task
+		Rq_task::Rq_task *dequeued_task;
+		while(1)
+		{
+			_rqs->deq(&dequeued_task);
+			//stop dequeueing, if there are no more tasks in the buffer
+			if(dequeued_task==nullptr) break;
+			//Store tuples of id and prio in list for core
+			list[2*counter-1]=(*dequeued_task).task_id;
+			list[2*counter]=(*dequeued_task).prio;
+			Genode::printf("dequeue task id:%d prio:%d\n",(*dequeued_task).task_id,(*dequeued_task).prio);
+			counter++;
+		}
+		//store number of tuples at first position of array
+		list[0]=counter-1;
+		sync.deploy(_ds, 0, 0);
+		Genode::env()->ram_session()->free(_ds);
+		the_cycle();
 	}
 
 }
