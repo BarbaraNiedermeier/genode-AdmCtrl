@@ -35,12 +35,7 @@ namespace Sched_controller {
 
 			int new_task(Rq_task::Rq_task task, int core)
 			{
-				PINF("Received new task with id: %d, prio: %d", task.task_id, task.prio);
-				PINF("deadline: %llu, wcet: %llu, period: %llu", task.deadline, task.wcet, task.inter_arrival);
-				int accepted = _ctr->enq(core, task);
-				PDBG("return value acceptet = %d", accepted);
-
-				return accepted;
+				return _ctr->enq(core, task);
 			}
 
 			void set_sync_ds(Genode::Dataspace_capability ds_cap)

@@ -65,31 +65,19 @@ namespace Sched_controller {
 		if (core < _num_cores)
 		{
 			task_map.insert({task.name, task});
-			long long unsigned start_suff = 0, end_suff = 0, start_rta = 0, end_rta = 0;
-			bool suff_test, rta_test;
-			asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (start_suff));
-			suff_test = fp_alg.fp_sufficient_test(&task, &_rqs[core]);
-			asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (end_suff));
 			//Execute sufficient schedulability test
-			//if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
-			if (!suff_test)
+			if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
 			{
 				//If sufficient test fails --> execute RTA (exact test)
-				asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (start_rta));
-				rta_test = fp_alg.RTA(&task, &_rqs[core]);
-				asm volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r" (end_rta));
-				if (!rta_test){
+				if (!fp_alg.RTA(&task, &_rqs[core]))
+				{
 					return -1;
 				}
 			}
-			PINF("time for scheduling decision sufficient: %llu, start: %llu, end: %llu, RTA: %llu, start_rta: %llu, end_rta: %llu", (end_suff-start_suff),
-				start_suff, end_suff, (end_rta - start_rta), start_rta, end_rta);
 			int success = _rqs[core].enq(task);
 			return success;
 		}
-
 		return -1;
-
 	}
 
 	/**
@@ -374,42 +362,34 @@ namespace Sched_controller {
 
 	int Sched_controller::update_rq_buffer(int core)
 	{
-		PINF("Update Rq_buffer!");
+		PINF("Update Rq_buffer for core %d!", core);
 		_rqs[core].init_w_shared_ds(sync_ds_cap_vector.at(core));
 		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
 		_mon_manager.update_rqs(rq_ds_cap);
 		_mon_manager.update_info(mon_ds_cap);
 
 		std::unordered_map<std::string, Rq_task::Rq_task>::iterator it;
-		PINF("%d tasks in monitor_rqs", rqs[0]);
 		for(int i=1; i<= rqs[0]; ++i){
 			Rq_task::Rq_task task;
 			task.task_id = rqs[2*i-1];
 			task.prio = rqs[2*i];
-			for(int j=0; j<100; ++j){
-				PINF("task position: %d label: %s, foc-id: %d", j, threads[j].thread_name.string(), threads[j].foc_id);
-				if(threads[j].foc_id == task.task_id){
-					//Treffer, task gefunden --> mit label in map suchen
+			for(int j=0; j<100; ++j)
+			{
+				if(threads[j].foc_id == task.task_id)
+				{
 					it = task_map.find(threads[j].thread_name.string());
-					if (it != task_map.end()){
-						//Task found in map --> enque in rq_buffer
-						PINF("Task with foc-id %d and label %s was not found in task-map --> task will be enqued into rq_buffer", task.task_id, it->first.c_str());
+					if (it != task_map.end())
+					{
 						task.wcet = it->second.wcet;
 						task.inter_arrival = it->second.inter_arrival;
 						task.deadline = it->second.deadline;
 						strcpy(task.name, it->second.name);
 						_rqs[core].enq(task);
 					}
-					else{
-						//label not found in map --> task is not managed and will be ignored
-						PINF("Task with foc-id %d and label %s was not found in task-map --> task will be ignored for scheduling decission", task.task_id, it->first.c_str());
-					}
 					break;
 				}
-
-				if(threads[j].foc_id == 0 && threads[j].prio == 0){
-					//Reached end of monitoring list without finding a match
-					PINF("No entry found in monitoring list for task with foc-id %d", task.task_id);
+				if(threads[j].foc_id == 0 && threads[j].prio == 0)
+				{
 					break;
 				}
 			}

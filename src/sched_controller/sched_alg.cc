@@ -14,7 +14,7 @@ namespace Sched_controller
 	bool Sched_alg::_compute_repsonse_time(Rq_task::Rq_task *new_task, int num_elements, Rq_task::Rq_task *check_task)
 	{
 		Rq_task::Rq_task *_curr_task;
-		_response_time_old = check_task->wcet; 
+		_response_time_old = check_task->wcet;
 		while (true)
 		{
 			_curr_task = _first_task;
@@ -30,7 +30,7 @@ namespace Sched_controller
 			{
 				_response_time += ceil((double)_response_time_old / (double)new_task->inter_arrival) * new_task->wcet;
 			}
-			
+
 			PINF("response_time = %llu, response_time_old = %llu, deadline = %llu", _response_time, _response_time_old, check_task->deadline);
 			
 			/*Since the response_time is increasing with each iteration, it has to be always
@@ -62,9 +62,6 @@ namespace Sched_controller
 	{
 		Rq_task::Rq_task *_curr_task;
 		int num_elements = rq_buf->get_num_elements();
-		PINF("Received new Rq_task: id: %d, prio: %d, wcet: %llu, period: %llu, deadline: %llu", new_task->task_id, new_task->prio, new_task->wcet, new_task->inter_arrival, new_task->deadline);
-		PINF("There are currently %d elements in the rq_buffer, new task has prio %d", num_elements, new_task->prio);
-
 		/*
 		 * Assuming that each task for schedulable if it is alone,
 		 * the task is acceptet if the rq_buffer is empty
@@ -89,11 +86,10 @@ namespace Sched_controller
 		{
 			PINF("New task has lower prio then all other tasks, prio_new = %d, prio_last = %d", new_task->prio, rq_buf->get_last_element()->prio);
 			_response_time_old = new_task->wcet;
-			PINF("Response_old = %llu, wcet_new = %llu", _response_time_old, new_task->wcet);
 			if (!_compute_repsonse_time(new_task, num_elements, new_task))
 			{
 				//Task Set not schedulable
-				PDBG("Task set is not schedulable!");
+				PWRN("Task set is not schedulable!");
 				return false;
 			}
 
@@ -110,11 +106,11 @@ namespace Sched_controller
 				_response_time_old = _curr_task->wcet;
 				if(_curr_task->prio <= new_task->prio)
 				{
-					PINF("check task-set with new task at position %d", i);
 					//check existing tasks with prio lower then new_task
 					if (!_compute_repsonse_time(new_task, i, _curr_task))
 					{
 						//Task Set not schedulable
+						PWRN("Task set is not schedulable!");
 						return false;
 					}
 				}
@@ -122,10 +118,10 @@ namespace Sched_controller
 				//check new_task at right possition
 				if (_curr_task->prio > new_task->prio && (_curr_task+1)->prio <= new_task->prio && i > 0)
 				{
-					PINF("check new task at position %d", i);
 					if (!_compute_repsonse_time(new_task, i+1, new_task))
 					{
 						//Task Set not schedulable
+						PINF("Task set is not schedulable!");
 						return false;
 					}
 				}
@@ -145,8 +141,8 @@ namespace Sched_controller
 		if (num_elements == 0)
 		{
 			//Rq is empty --> Task set is schedulable
-			PDBG("Rq is empty, Task set is schedulable!");
-			return 1;
+			PINF("Rq is empty, Task set is schedulable!");
+			return true;
 		}
 
 		double R_ub, sum_util = 0.0, sum_util_wcet = 0.0;
@@ -162,7 +158,7 @@ namespace Sched_controller
 				if (R_ub > new_task->deadline)
 				{
 					//Deadline hit for new task
-					PWRN("Deadline hit for task %d, Task set might be not schedulable! Maybe try an exact test.", new_task->task_id);				
+					PWRN("Deadline hit for task %d, Task set might be not schedulable! Maybe try an exact test.", new_task->task_id);
 					return false;
 				}
 				sum_util += (double)new_task->wcet / (double)new_task->inter_arrival;
@@ -177,7 +173,7 @@ namespace Sched_controller
 			if (R_ub > _curr_task->deadline)
 			{
 				//Deadline hit for task i
-				PWRN("Deadline hit for task %d, Task set might be not schedulable! Maybe try an exact test.", _curr_task->task_id);				
+				PWRN("Deadline hit for task %d, Task set might be not schedulable! Maybe try an exact test.", _curr_task->task_id);
 				return false;
 			}
 			sum_util += (double)_curr_task->wcet / (double)_curr_task->inter_arrival;
