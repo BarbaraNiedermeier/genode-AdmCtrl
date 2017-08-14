@@ -99,6 +99,7 @@ namespace Sched_controller {
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
 			int add_task(int core, Rq_task::Rq_task task); // add task to task array
+
 			bool change_core(std::string task_name, int core);
 			void run_job();
 			

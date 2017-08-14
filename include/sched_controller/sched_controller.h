@@ -37,13 +37,6 @@ namespace Sched_controller
 		int rq_buffer;
 
 	};
-	/*
-	enum Optimization_goal {
-		NONE,
-		FAIRNESS,
-		UTILIZATION
-	};
-	*/
 
 	class Sched_controller
 	{

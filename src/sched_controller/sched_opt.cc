@@ -80,8 +80,6 @@ namespace Sched_controller {
 	{
 		// Es kommt immer nur ein neuer Task hinzu. Dieser Muss identifiziert werden und in das Task-Array eingefügt werden.
 		PDBG("Optimizer - Add task to _tasks array.");
-		
-		
 		// convert newly arriving task to optimization task
 		Optimization_task _task;
 		
@@ -164,7 +162,8 @@ namespace Sched_controller {
 				break;
 			case FAIRNESS:
 				PDBG("The optimization goal 'fairness' has been chosen.");
-				_optimize_fairness();
+				int core = 1;
+				_optimize_fairness(core);
 				break;
 			case UTILIZATION:
 				PDBG("The optimization goal 'utilization' has been chosen.");
@@ -176,7 +175,7 @@ namespace Sched_controller {
 		}
 	}
 	
-	void Sched_opt::_optimize_fairness()
+	void Sched_opt::_optimize_fairness(int core)
 	{
 		
 		PDBG("BN ------------------------------- Arrived in optimize_fairness.");
@@ -283,7 +282,6 @@ namespace Sched_controller {
 		
 		
 		
-		
 		/*
 		 *
 		 * Step 2: analyze monitoring info
@@ -365,7 +363,11 @@ namespace Sched_controller {
 				// set start_time for next iteration
 				_set_start_time(task_nr, most_recent_thread, recent_deadline_time_reached);
 			}
+			// Ende von Schleife durch threads-Array
+			
 		}
+		// Ende von Schleife durch rqs-Array
+		
 		
 		
 		
@@ -610,7 +612,6 @@ namespace Sched_controller {
 		
 		// fill threads with data
 		_mon_manager->update_info(_mon_ds_cap);
-		
 		
 		
 		// Loop through rqs-Array
