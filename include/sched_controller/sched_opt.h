@@ -26,6 +26,12 @@ namespace Sched_controller {
 		UTILIZATION
 	};
 
+	struct Unknown_start_time
+	{
+		unsigned int task_nr;
+		std::vector<int> possible_thread;
+		
+	};
 
 	struct Optimization_task
 	{
@@ -95,11 +101,9 @@ namespace Sched_controller {
 			int _get_cause_task(unsigned int task_nr, unsigned int thread_nr);
 			
 			
-			
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
 			int add_task(int core, Rq_task::Rq_task task); // add task to task array
-
 			bool change_core(std::string task_name, int core);
 			void run_job();
 			

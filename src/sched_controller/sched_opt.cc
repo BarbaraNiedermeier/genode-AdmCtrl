@@ -162,8 +162,7 @@ namespace Sched_controller {
 				break;
 			case FAIRNESS:
 				PDBG("The optimization goal 'fairness' has been chosen.");
-				int core = 1;
-				_optimize_fairness(core);
+				_optimize_fairness();
 				break;
 			case UTILIZATION:
 				PDBG("The optimization goal 'utilization' has been chosen.");
@@ -175,7 +174,7 @@ namespace Sched_controller {
 		}
 	}
 	
-	void Sched_opt::_optimize_fairness(int core)
+	void Sched_opt::_optimize_fairness()
 	{
 		
 		PDBG("BN ------------------------------- Arrived in optimize_fairness.");

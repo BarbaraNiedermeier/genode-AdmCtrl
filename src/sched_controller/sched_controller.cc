@@ -494,7 +494,6 @@ namespace Sched_controller {
 		Rq_task::Rq_task *dequeued_task;
 		while(1)
 		{
-			_rqs->deq(&dequeued_task);
 			//stop dequeueing, if there are no more tasks in the buffer
 			if(dequeued_task==nullptr) break;
 			//Store tuples of id and prio in list for core
