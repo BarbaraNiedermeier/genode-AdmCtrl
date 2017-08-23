@@ -59,6 +59,10 @@ namespace Sched_controller {
 		unsigned int*		value;
 		
 		
+		// toDo
+		// this is needed for every core, on which the task is executed
+		std::vector<unsigned int> competitor;
+		
 		
 	};	
 	
