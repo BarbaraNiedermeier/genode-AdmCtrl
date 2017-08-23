@@ -26,12 +26,6 @@ namespace Sched_controller {
 		UTILIZATION
 	};
 
-	struct Unknown_start_time
-	{
-		unsigned int task_nr;
-		std::vector<int> possible_thread;
-		
-	};
 
 	struct Optimization_task
 	{
@@ -59,9 +53,9 @@ namespace Sched_controller {
 		unsigned int*		value;
 		
 		
-		// toDo
-		// this is needed for every core, on which the task is executed
-		std::vector<unsigned int> competitor;
+		bool* 			overload;
+		unsigned int*		value;
+		
 		
 		
 	};	

@@ -80,11 +80,6 @@ namespace Sched_controller {
 	{
 		// Es kommt immer nur ein neuer Task hinzu. Dieser Muss identifiziert werden und in das Task-Array eingefügt werden.
 		PDBG("Optimizer - Add task to _tasks array.");
-<<<<<<< 5d7b28b373b162ea575de06659802b1fef48e1bc
-=======
-		
-		
->>>>>>> Introduction of task groups (competitor)
 		// convert newly arriving task to optimization task
 		Optimization_task _task;
 		
@@ -118,7 +113,6 @@ namespace Sched_controller {
 		_tasks.erase(_tasks.begin() + task_nr);
 		
 		
-<<<<<<< 5d7b28b373b162ea575de06659802b1fef48e1bc
 		// remove task from competitor list of all tasks
 		for (unsigned int task=0; task<_tasks.size(); ++task)
 		{
@@ -152,30 +146,6 @@ namespace Sched_controller {
 			{
 				_tasks[i].core = core;
 				return true;
-=======
-		// remove task from no_start_time
-		for (unsigned int i=0; i<no_start_time.size(); ++i)
-		{
-			if (no_start_time[i].task_nr == task_nr)
-			{
-				no_start_time.erase(no_start_time.begin() + i);
-				break;
-			}
-		}
-		
-		// remove task from competitor lists of all tasks
-		for (unsigned int task=0; task<_tasks.size(); ++task)
-		{
-			if (_tasks[task].competitor.empty())
-				continue;
-			for(unsigned int i=0; i<_tasks[task].competitor.size(); ++i)
-			{
-				if(_tasks[task].competitor[i] == task_nr)
-				{
-					_tasks[task].competitor.erase(_tasks[task].competitor.begin() + i);
-					break;
-				}
->>>>>>> Introduction of task groups (competitor)
 			}
 		}
 		
@@ -224,35 +194,8 @@ namespace Sched_controller {
 				// if it's time to see what happend, ...
 				if (current_time >= _tasks[i].start_time + _tasks[i].rq_task.deadline)
 				{
-<<<<<<< 5d7b28b373b162ea575de06659802b1fef48e1bc
 					//... query monitor-info about _tasks[i] (was there any deadline miss?)
 					_job_finished(i, current_time);
-=======
-					// if it's time to see what happend, ...
-					if (current_time >= _tasks[i].start_time + _tasks[i].rq_task.deadline)
-					{
-						//... query monitor-info about _tasks[i] (was there any deadline miss?)
-						_job_finished(i, current_time);
-					}
-				}
-				else
-				{
-					// task did not start yet or start_time is unknown
-					// überprüfe, ob dieser Task in no_start_time ist, sonst gibt es einen Fehler
-					bool task_found = false;
-					for (unsigned int j=0; j<no_start_time.size(); ++j)
-					{
-						if(no_start_time[j].task_nr == i)
-							task_found = true;
-					}
-					// if task is in no_start_time, query monitoring data to see, if it has already started 
-					if (task_found)					
-						_job_finished(i, current_time);
-					/*
-					else
-						PWRN("Task %s has no start_time, but is not in no_start_time list.", _tasks[i].name);
-					*/
->>>>>>> Introduction of task groups (competitor)
 				}
 			}
 			
@@ -267,8 +210,7 @@ namespace Sched_controller {
 		
 		*/
 		
-		
-		//PDBG("BN ------------------------------- No optimization is done until now.");
+		PDBG("BN ------------------------------- No optimization is done until now.");
 		
 	}
 	
@@ -279,10 +221,6 @@ namespace Sched_controller {
 		// Although it sets the start_time if there was a job.
 		// It referes to the following global variables:
 		//	_tasks -> name, start_time, rq_task
-<<<<<<< 5d7b28b373b162ea575de06659802b1fef48e1bc
-=======
-		//	no_start_time -> task_nr, possible_thread
->>>>>>> Introduction of task groups (competitor)
 		//	threads -> thread_name, start_time, foc_id
 		// 	_mon_manager -> update_info
 		
