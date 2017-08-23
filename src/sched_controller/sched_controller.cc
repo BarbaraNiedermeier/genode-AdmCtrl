@@ -342,6 +342,7 @@ namespace Sched_controller {
 	}
 
 	void Sched_controller::the_cycle() {
+		rqs[1]=0;
 		_mon_manager.update_rqs(rq_ds_cap);
 		_rqs[0].init_w_shared_ds(sync_ds_cap);
 		_rqs[1].init_w_shared_ds(sync_ds_cap);
@@ -352,7 +353,7 @@ namespace Sched_controller {
 			task.task_class = Rq_task::Task_class::lo;
 			task.task_strategy = Rq_task::Task_strategy::priority;
 			task.prio = rqs[2*i];
-			PDBG("enqueue task\n");
+			//PDBG("enqueue task\n");
 			allocate_task(task);
 			//_rqs->enq(task);
 		}
@@ -369,13 +370,14 @@ namespace Sched_controller {
 			//stop dequeueing, if there are no more tasks in the buffer
 			if(dequeued_task==nullptr) break;
 			//Store tuples of id and prio in list for core
-			list[2*counter-1]=(*dequeued_task).task_id;
-			list[2*counter]=(*dequeued_task).prio;
+			list[2*counter]=(*dequeued_task).task_id;
+			list[2*counter+1]=(*dequeued_task).prio;
 			Genode::printf("dequeue task id:%d prio:%d\n",(*dequeued_task).task_id,(*dequeued_task).prio);
 			counter++;
 		}
 		//store number of tuples at first position of array
 		list[0]=counter-1;
+		list[1]=0;
 		sync.deploy(_ds, 0, 0);
 		Genode::env()->ram_session()->free(_ds);
 		the_cycle();

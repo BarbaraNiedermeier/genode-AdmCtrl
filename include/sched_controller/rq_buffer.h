@@ -128,7 +128,7 @@ namespace Sched_controller
 		 */
 		//_ds = Genode::env()->ram_session()->alloc(ds_size);
 		_ds_begin = Genode::env()->rm_session()->attach(_ds);
-		PDBG("rq buffer address: %d\n",_ds_begin);
+		//PDBG("rq buffer address: %d\n",_ds_begin);
 
 		char *_lockp = _ds_begin + (0 * sizeof(int));
 		char *_headp = _ds_begin + (1 * sizeof(int));
