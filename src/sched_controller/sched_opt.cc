@@ -83,16 +83,22 @@ namespace Sched_controller {
 	}
 	
 	
-	void Sched_opt::add_task(unsigned int core, Rq_task::Rq_task task)
+
+	void Sched_opt::add_task(int core, Rq_task::Rq_task task)
 	{
-		PDBG("Optimizer - Add task %s to task list.", std::string(task.name).c_str());
+		// Es kommt immer nur ein neuer Task hinzu. Dieser Muss identifiziert werden und in das Task-Array eingefügt werden.
+		PDBG("Optimizer - Add task to _tasks array.");
 		
 		// convert newly arriving task to optimization task
 		Optimization_task _task;
 		
-		_task.name = std::string(task.name); // das geht erst, wenn Masterarebit von Steffan fertig ist
-		_task.inter_arrival = task.inter_arrival;
+
 		_task.deadline = task.deadline;
+		_task.inter_arrival = task.inter_arrival;
+		_task.name = std::string(task.name); // das geht erst, wenn Masterarebit von Steffan fertig ist
+		
+		_task.start_time = 0;
+		_task.to_schedule = true;
 		_task.core = core;
 		_task.arrival_time = 0;
 		_task.to_schedule = true;
@@ -117,11 +123,26 @@ namespace Sched_controller {
 		
 		_tasks.insert({_task.name, _task});
 		
-		// this return value is needed for call from enq
-		return -1;
 	}
 	
-	void Sched_opt::last_job_started(std::string task_name)
+
+	void Sched_opt::task_removed(int core, Rq_task::Rq_task **task_ptr)
+	{
+		// this function is called by the sched_controller when dequeueing the task with given name.
+		
+		std::string task_name = std::string((*task_ptr)->name);
+		
+		for (unsigned int task=0; task < _tasks.size(); ++task)
+		{
+			if(!_tasks[task].name.compare(task_name))
+			{
+				// the task was found in task array -> remove it an all its occurances in the competitor lists
+				_remove_task(task);
+			}
+		}
+	}
+	
+	void Sched_opt::_remove_task(unsigned int task_nr)
 	{
 		// This function is called by the taskloader as soon as the last job was started for this task.
 		
@@ -178,15 +199,15 @@ namespace Sched_controller {
 		
 	}
 	
-	bool Sched_opt::change_core(std::string task_name, unsigned int core)
+
+	bool Sched_opt::change_core(int core, std::string task_name)
 	{
 		// This function handles the situation, when a task has changed its core.
 		// It referes to the following global variables:
 		//	_tasks -> name, deadline
 		
-		
-		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(task_name);
-		if(it != _tasks.end())
+
+		for (unsigned int i=0; i<_tasks.size(); ++i)
 		{
 			PINF("Optimizer: Change core of task %s from %d to %d.", task_name.c_str(), it->second.core, core);
 			it->second.core = core;
@@ -208,7 +229,22 @@ namespace Sched_controller {
 	}
 	
 	
-	bool Sched_opt::scheduling_allowed(std::string task_name)
+
+	bool Sched_opt::scheduling_allowed()
+	{
+		
+		// This should be called by Taskloader_session_component::start(), before starting a task
+		
+		// make an Task as input-parameter
+		// get its task_name
+		// look in _tasks for task_name
+		// return its value of to_schedule
+		
+		return false;
+	}
+	
+	
+	void Sched_opt::start_optimizing()
 	{
 		// This function looks up the to_schedule value of the requested task.
 		// It should be called by Taskloader before starting a task (some where in _session_component::start()).
@@ -255,7 +291,8 @@ namespace Sched_controller {
 			for(auto &it: _tasks)
 			{
 				// if it's time to see what happend, ...
-				if (current_time >= it.second.arrival_time + it.second.deadline)
+
+				if (current_time >= _tasks[i].start_time + _tasks[i].deadline)
 				{
 					//... query monitor-info about current task (was there any deadline miss?)
 					_query_monitor(it.first, current_time);
@@ -282,8 +319,8 @@ namespace Sched_controller {
 		// This function query monitoring information and analyzes it. Then it reacts correspondingly by adjusting the value, reacting on deadline misses and setting the to_schedule flags.
 		// Although it sets the arrival_time if there was a job.
 		// It referes to the following global variables:
-		//	_tasks -> name, arrival_time, deadline
-		//	_threads -> thread_name, arrival_time, foc_id
+		//	_tasks -> name, start_time, deadline
+		//	_threads -> thread_name, start_time, foc_id
 		// 	_mon_manager -> update_info
 		
 		
@@ -305,10 +342,10 @@ namespace Sched_controller {
 		for(int j=0; j<100; ++j)
 		{
 			// determine unknown (new) jobs of given task
-			if( !task_str.compare(_threads[j].thread_name.string()))
+			if( !_tasks[task_nr].name.compare(_threads[j].thread_name.string()))
 			{
 				// matching task found -> check if this thread is a new job
-				if(_threads[j].arrival_time >= _tasks.at(task_str).arrival_time)
+				if(_threads[j].start_time >= _tasks[task_nr].start_time)
 				{
 					PINF("Optimizer: A job of task %s has been detected at monitoring list.", _threads[j].thread_name.string());
 					new_threads_nr.push_back(j);
@@ -333,12 +370,14 @@ namespace Sched_controller {
 			
 			
 			// end of threads-array reached?
-			if(threads[j].foc_id == 0)
+			if(_threads[j].foc_id == 0)
 			{
 				if (threads_array_ended)
 				{
-					// Reached end of monitoring list
-					PINF("Optimizer: End of monitoring list reached.");
+					// Reached end of monitoring list without finding a matching thread to _tasks[task_nr] 
+					// -> new_threads_nr is still empty
+					PINF("No entry found in monitoring list for task with name %s", _threads[j].thread_name.string());
+					
 					break;
 				}
 				else
@@ -375,10 +414,10 @@ namespace Sched_controller {
 			}
 			case 1:
 			{
-				// there is only one new thread with _threads[j].arrival_time >= _tasks.at(task_str).arrival_time
+				// there is only one new thread with _threads[j].start_time >= _tasks[task_nr].start_time
 				job_executed = true;
 				
-				bool deadline_time_reached = (current_time >= _threads[new_threads_nr[0]].arrival_time + _tasks.at(task_str).deadline);
+				bool deadline_time_reached = (current_time >= _threads[new_threads_nr[0]].start_time + _tasks[task_nr].deadline);
 				
 				if (deadline_time_reached) // the job has no time left to be executed
 				{
@@ -404,10 +443,9 @@ namespace Sched_controller {
 				// find the two threads, which are most recent
 				for(unsigned int i=0; i<new_threads_nr.size(); ++i)
 				{
-
-					if ( (most_recent_thread < 0) || (_threads[new_threads_nr[i]].arrival_time > _threads[most_recent_thread].arrival_time) )
+					if ( (most_recent_thread < 0) || (_threads[new_threads_nr[i]].start_time > _threads[most_recent_thread].start_time) )
 						most_recent_thread = new_threads_nr[i];
-					else if ( ((second_recent_thread < 0) || (_threads[new_threads_nr[i]].arrival_time > _threads[second_recent_thread].arrival_time)) )
+					else if ( ((second_recent_thread < 0) || (_threads[new_threads_nr[i]].start_time > _threads[second_recent_thread].start_time)) )
 						second_recent_thread = new_threads_nr[i];
 				}
 				
@@ -421,7 +459,7 @@ namespace Sched_controller {
 					job_executed = true;
 				
 				// determine if most recent thread has reached its deadline time
-				bool recent_deadline_time_reached = (current_time >= _threads[most_recent_thread].arrival_time + _tasks.at(task_str).deadline);
+				bool recent_deadline_time_reached = (current_time >= _threads[most_recent_thread].start_time + _tasks[task_nr].deadline);
 					
 				// change value of _tasks.at(task_str), react to deadline-misses and set to_schedule
 				for(unsigned int i=0; i<new_threads_nr.size(); ++i)
@@ -474,12 +512,12 @@ namespace Sched_controller {
 	{
 		// This function sets the arrival_time of the given task
 		// It referes to the following global variables:
-		//	_tasks -> arrival_time, inter_arrival
-		//	_threads -> arrival_time
+		//	_tasks -> start_time, inter_arrival
+		//	_threads -> start_time
 		
-		_tasks.at(task_str).arrival_time = _threads[thread_nr].arrival_time;
+		_tasks[task_nr].start_time = _threads[thread_nr].start_time;
 		if (deadline_time_reached)
-			_tasks.at(task_str).arrival_time += _tasks.at(task_str).inter_arrival;
+			_tasks[task_nr].start_time += _tasks[task_nr].inter_arrival;
 	}
 	
 	void Sched_opt::_task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules)
@@ -488,25 +526,11 @@ namespace Sched_controller {
 		// Depending on the exit_time of the thread, the tasks value is in-/decreased and the deadline miss is handled
 		// It referes to the following global variables:
 		//	_tasks -> value, deadline, competitor (name), core
-		//	_threads -> arrival_time, exit_time
-		
-		
-		
-		// check if job was executed on the expected core
-		// toDo: convert affinity to core number (int)
-		/*
-		int _core = (int) _threads[thread_nr].affinity;
-		if (_tasks.at(task_str).core != thread_core)
-		{
-			PWRN("Optimizer (_task_executed): The task %s has changed its core from core-%d to core-%d.", task_str.c_str(), _tasks.at(task_str).core, thread_core);
-			_tasks.at(task_str).core = thread_core;
-		}
-		*/
-		unsigned int core = _tasks.at(task_str).core;
-		
-		
-		// determine if there was an soft-exit before reaching the deadline time
-		if((_threads[thread_nr].exit_time > 0) && (_threads[thread_nr].exit_time <= _threads[thread_nr].arrival_time + _tasks.at(task_str).deadline))
+		//	_threads -> start_time, exit_time
+	
+		unsigned int core = _tasks[task_nr].core;
+		// determine if there was an soft-exit before deadline
+		if(_threads[thread_nr].exit_time <= _threads[thread_nr].start_time + _tasks[task_nr].deadline)
 		{
 			// job was executed before reaching its deadline
 			
@@ -558,7 +582,7 @@ namespace Sched_controller {
 	{
 		// This function handles the situation, when the task has elapsed its inter_arrival time, but the job was not executed
 		// It referes to the following global variables:
-		//	_tasks
+		//	_tasks -> to_schedule, value, core
 		
 		
 		
@@ -678,7 +702,7 @@ namespace Sched_controller {
 	{	
 		// This function sets the to_schedule of the thask with max value/max utilization to true.
 		// It referes to the following global variables:
-		//	_tasks -> competitor, core, value, to_schedule, utilization
+		//	_tasks -> competitor, core, value, to_schedule
 		
 		if(!_tasks.at(task_str).competitor.empty())
 		{
@@ -950,14 +974,14 @@ namespace Sched_controller {
 	{
 		// This function queries the monitoring objects (threads) to find the thread which caused the deadline miss for the task
 		// It referes to the following global variables:
-		//	_threads -> arrival_time, exit_time, foc_id, thread_name
+		//	_threads -> start_time, exit_time, foc_id, thread_name
 		//	_tasks -> deadline, name
 		
 		int cause_thread_nr = -1;
 		
-		// time interval in which the threads exit time hast to be in: exit_time shall be after threads arrival_time and before threads deadline
-		unsigned long long thread_start = _tasks.at(task_str).arrival_time;
-		unsigned long long thread_deadline = _tasks.at(task_str).arrival_time + _tasks.at(task_str).deadline;
+		// time interval in which the threads exit time hast to be in: exit_time shall be after threads start_time and before threads deadline
+		unsigned long long thread_start = _threads[thread_nr].start_time;
+		unsigned long long thread_deadline = _threads[thread_nr].start_time + _tasks[task_nr].deadline;
 		
 		// query monitoring objects to find a matching thread
 		bool threads_array_ended = false;
@@ -967,10 +991,10 @@ namespace Sched_controller {
 		{
 			// find thread which exit-time is the most recent in the interval [thread_start, thread_deadline], so it is the causation thread
 			// matching task found -> check if exit_time is in considered time interval
-			if((threads[i].exit_time >= thread_start) && (threads[i].exit_time <= thread_deadline))
+			if((_threads[i].exit_time >= thread_start) && (_threads[i].exit_time <= thread_deadline))
 			{
 				// this is a possible cause task. I need the most recent one
-				if((cause_thread_nr < 0) || (threads[i].exit_time > threads[cause_thread_nr].exit_time))
+				if((cause_thread_nr < 0) || (_threads[i].exit_time > _threads[cause_thread_nr].exit_time))
 				{
 					cause_thread_nr = i;
 				}
@@ -978,11 +1002,12 @@ namespace Sched_controller {
 			
 			
 			// end of threads-array reached?
-			if(threads[i].foc_id == 0)
+			if(_threads[i].foc_id == 0)
 			{
 				if (threads_array_ended)
 				{
-					// Reached end of monitoring list
+					// Reached end of monitoring list without finding a matching thread to _tasks[task_nr]
+					PINF("No entry found in monitoring list for task with name %s", _threads[i].thread_name.string());
 					break;
 				}
 				// else: this is the first element of the array.
@@ -1010,14 +1035,8 @@ namespace Sched_controller {
 			//check if thread had rip-time in interval
 			if((rip[i+1] >= thread_start) && (rip[i+1] <= thread_deadline))
 			{
-				
-				// consider latest job at interval
-				if(rip[i+1] > latest_rip_time)
-				{
-					// this job might be the causing job
-					job_foc_id = rip[i];
-					latest_rip_time = rip[i+1];
-				}
+				if(!_tasks[i].name.compare(_threads[cause_thread_nr].thread_name.string()))
+					return i;
 			}
 		}
 	
@@ -1046,128 +1065,15 @@ namespace Sched_controller {
 		return std::string();
 	}
 	
-	void Sched_opt::run_job()
+	
+	
+	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap)
 	{
-		// This should be called by Taskloader_session_component::start(), before starting a task
-		
-		
-		// goal: start job of task via adding it to rqs
-		// Step 1: update rqs via monitor
-		// Step 2: only add job if allowed
-		
-		
-		// remove old entries from RunQueue
-		//_rqs.init_w_shared_ds(_sync_ds_cap);
-		
-		
-		
-		// fill rqs with data
-		_mon_manager->update_rqs(_rq_ds_cap);
-		
-		// fill threads with data
-		_mon_manager->update_info(_mon_ds_cap);
-		
-		
-		
-		// Loop through rqs-Array
-		for (int i = 1; i<= rqs[0]; ++i)
-		{
-			unsigned int rqs_foc_id = rqs[2*i-1];
-			
-			// Loop through threads-Array
-			for(int j=0; j<100; ++j)
-			{
-				if(threads[j].foc_id == rqs_foc_id)
-				{
-					// found matching of monitoring_threads <-> monitoring_rqs
-					
-					// look for task label of thread in _tasks
-					
-					// toDo: do this via map
-					
-					bool tasks_found = false;
-					for(unsigned int k=0; k<_tasks.size(); ++k)
-					{
-						if(!_tasks[k].name.compare(threads[j].thread_name.string()))
-						{
-							//Task found in map (threads[j] ~ _tasks[k])
-							tasks_found = true;
-							PINF("Job with foc-id %d and label %s was found in _tasks", rqs_foc_id, _tasks[k].name.c_str());
-						
-							// Add tasks to RunQueue
-							if (_tasks[k].to_schedule)
-							{
-				
-								_rqs->enq(_tasks[k].rq_task);
-				
-								/*
-								// erstelle neuen Rq_Task für enq
-								Rq_task::Rq_task new_task;
-								
-								new_task.task_id = _tasks[k].rq_task.task_id; //rqs_foc_id;
-								new_task.task_class = _tasks[k].rq_task.task_class;
-								new_task.task_strategy = _tasks[k].rq_task.task_strategy;
-								new_task.deadline = _tasks[k].rq_task.deadline;
-								new_task.wcet = _tasks[k].rq_task.wcet;
-								new_task.inter_arrival = _tasks[k].rq_task.inter_arrival;
-								new_task.prio = _tasks[k].rq_task.prio;
-								new_task.valid = _tasks[k].rq_task.valid;
-								strcpy(new_task.name, _tasks[k].rq_task.name);
-				
-								//_rqs.enq(new_task);
-				
-								*/
-							}
-							
-						}
-					}
-					if(!tasks_found)
-					{
-						//label not found in map --> task is not managed and will be ignored for runqueue
-						PINF("Job with foc-id %d and label %s was not found in _tasks", rqs_foc_id, threads[j].thread_name.string());
-					}
-					
-					// Beende die Schleife durch threads-Array, da kein zweiter job zur foc_id passen wird
-					break;
-				}
-
-				if(threads[j].foc_id == 0)
-				{
-					//Reached end of monitoring list without finding a match
-					PINF("No entry found in monitoring list for task with foc-id %d", rqs_foc_id);
-					break;
-				}
-			}
-			// Ende von Schleife durch threads-Array
-			
-		}
-		// Ende von Schleife durch rqs-Array
-		
-		
-	}
-	
-	
-	
-	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap)
-
-	{
-		// set runqueue, which shall be influenced
-		_rqs = sched__rqs;
 		
 		// set variables for querying monitor data
-		_mon_manager = sched_mon_manager;
-		threads = sched_threads;
-		_mon_ds_cap = sched_mon_ds_cap;
-		
-		rqs = sched_rqs;
-		_rq_ds_cap = sched_rq_ds_cap;
-		_sync_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(int));
-		
-		_sync_ds_cap = schred_sync_ds_cap;
-		
-		// set variables for querying rip list
-		_dead_ds_cap = dead_ds_cap;
-		rip = Genode::env()->rm_session()->attach(_dead_ds_cap);
+		_mon_manager = mon_manager;
+		_threads = sched_threads;
+		_mon_ds_cap = mon_ds_cap;
 		
 		// set the number of cores to handle multicore optimization
 		num_cores = sched_num_cores;

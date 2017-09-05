@@ -85,8 +85,9 @@ namespace Sched_controller {
 			// do task optimization for lo tasks
 			if (task.task_class == Rq_task::Task_class::lo)
 			{
-				_optimizer->add_task((unsigned int) core, task);
+				_optimizer->add_task(core, task);
 			}
+			return success;
 		}
 		
 		return -1;
@@ -106,6 +107,11 @@ namespace Sched_controller {
 		if (core < _num_cores) {
 			int success = _rqs[core].deq(task_ptr);
 			PINF("Removed task from core %d, pointer is %p", core, *task_ptr);
+			if(success)
+			{
+				// inform optimizer about dequeue of the task
+				_optimizer->task_removed(core, task_ptr);
+			}
 			return success;
 		}
 
@@ -235,7 +241,8 @@ namespace Sched_controller {
 
 
 	/**
-	* BN - Optimize task scheduling
+	* 
+	* Optimize edf task scheduling at overload
 	*
 	*/
 	Sched_opt* Sched_controller::get_optimizer()
@@ -407,7 +414,7 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap, dead_ds_cap);
+		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap);
 				
 		//loop forever
 		the_cycle();
