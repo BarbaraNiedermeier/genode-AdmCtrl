@@ -416,9 +416,7 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		
-		_optimizer = new Sched_opt(_num_cores, _rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap);
-		//_optimizer = new Sched_opt(_num_cores, &_rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap, sync_ds_cap);		
+		_optimizer = new Sched_opt(_num_cores, &_rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap, sync_ds_cap);		
 				
 		//loop forever
 		the_cycle();

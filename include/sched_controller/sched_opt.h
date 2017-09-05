@@ -104,10 +104,7 @@ namespace Sched_controller {
 			
 			void start_optimizing();
 			
-			Sched_opt(int, Rq_buffer<Rq_task::Rq_task>*, Mon_manager::Connection*, Mon_manager::Monitoring_object*, Genode::Dataspace_capability, int*, Genode::Dataspace_capability);
-			
-			
-			//Sched_opt(int, Rq_buffer<Rq_task::Rq_task>*, Mon_manager::Connection*, Mon_manager::Monitoring_object*, Genode::Dataspace_capability, int*, Genode::Dataspace_capability, Genode::Dataspace_capability);
+			Sched_opt(int, Rq_buffer<Rq_task::Rq_task>*, Mon_manager::Connection*, Mon_manager::Monitoring_object*, Genode::Dataspace_capability, int*, Genode::Dataspace_capability, Genode::Dataspace_capability);
 			~Sched_opt();
 
 	};

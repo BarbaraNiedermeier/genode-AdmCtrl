@@ -688,10 +688,7 @@ namespace Sched_controller {
 	
 	
 	
-	// toDo: Sobald der Controller mit sync_ds_cap umgehen kann, dies wieder einfügen!
-	//Sched_opt::Sched_opt(int sched_num_cores, Rq_buffer<Rq_task::Rq_task> *sched__rqs, Mon_manager::Connection *sched_mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability sched_mon_ds_cap, int* sched_rqs, Genode::Dataspace_capability sched_rq_ds_cap, Genode::Dataspace_capability schred_sync_ds_cap)
-	
-	Sched_opt::Sched_opt(int sched_num_cores, Rq_buffer<Rq_task::Rq_task> *sched__rqs, Mon_manager::Connection *sched_mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability sched_mon_ds_cap, int* sched_rqs, Genode::Dataspace_capability sched_rq_ds_cap)
+	Sched_opt::Sched_opt(int sched_num_cores, Rq_buffer<Rq_task::Rq_task> *sched__rqs, Mon_manager::Connection *sched_mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability sched_mon_ds_cap, int* sched_rqs, Genode::Dataspace_capability sched_rq_ds_cap, Genode::Dataspace_capability schred_sync_ds_cap)
 	{
 		// set runqueue, which shall be influenced
 		_rqs = sched__rqs;
@@ -705,7 +702,7 @@ namespace Sched_controller {
 		_rq_ds_cap = sched_rq_ds_cap;
 		_sync_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(int));
 		
-		//_sync_ds_cap = schred_sync_ds_cap;
+		_sync_ds_cap = schred_sync_ds_cap;
 		
 		num_cores = sched_num_cores;
 		
