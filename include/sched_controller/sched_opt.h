@@ -53,9 +53,6 @@ namespace Sched_controller {
 		unsigned int*		value;
 		
 		
-		bool* 			overload;
-		unsigned int*		value;
-		
 		
 		
 	};	

@@ -361,25 +361,9 @@ namespace Sched_controller {
 				// set start_time for next iteration
 				_set_start_time(task_nr, most_recent_thread, recent_deadline_time_reached);
 			}
-			// Ende von Schleife durch threads-Array
-			
 		}
-		// Ende von Schleife durch rqs-Array
-		
-		// if the to_schedules shall be set, ...
-		if(set_to_schedules)
-			_set_to_schedule(task_nr);
-	}
-	
-	
-	void Sched_opt::_task_not_executed(unsigned int task_nr)
-	{
-		// This function handles the situation, when the task has elapsed its inter_arrival time, but the job was not executed
-		// It referes to the following global variables:
-		//	_tasks
 		
 		
-		// toDo: query to_schedule
 		
 		if(!job_executed)
 		{
@@ -622,6 +606,7 @@ namespace Sched_controller {
 		
 		// fill threads with data
 		_mon_manager->update_info(_mon_ds_cap);
+		
 		
 		
 		// Loop through rqs-Array
