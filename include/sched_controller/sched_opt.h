@@ -27,41 +27,14 @@ namespace Sched_controller {
 		FAIRNESS,
 		UTILIZATION
 	};
-	enum Cause_of_death {
-		KILLED, // task was killed by user (hard exit)
-		FINISHED // task finished its last job (soft exit)
-	};
-	// this struct is used to represent the tasks which are no Optimization_tasks any more (finished execution <-> killed)
-	struct Ended_task
-	{
-		std::string		name;
-		unsigned int		last_foc_id; // foc_id of last job
-		Cause_of_death		cause_of_death;
-	};
 	
-	// this struct is used to determine the job corresponding to the thread at the rip list
 	struct Newest_job
 	{
 		unsigned int		foc_id;
-		unsigned long long 	arrival_time;
-		unsigned int		core;
-		bool			dispatched;
+		unsigned long long 	start_time;
 		
 	};
 
-	//class Related_tasks
-	struct Related_tasks
-	{
-		//public:
-			unsigned int		max_value;
-			std::unordered_set<std::string> tasks;
-			
-		/*
-			Related_tasks();
-		*/
-		
-	};
-	
 	struct Optimization_task
 	{
 		// general task attributes
@@ -70,9 +43,10 @@ namespace Sched_controller {
 		unsigned long long	inter_arrival;
 		unsigned long long	deadline;
 		
-		// dynamic task attributes
-		unsigned int		core;
-		unsigned long long 	arrival_time; // this is the jobs earliest possible start time
+		// dynamische Info
+		int			core;
+		unsigned long long 	start_time;
+		
 		bool			to_schedule;
 		bool			last_job_started; // used to indicate thelast execution of a job belonging to this task
 		std::vector<std::string> competitor;
@@ -82,6 +56,8 @@ namespace Sched_controller {
 		
 
 		std::vector<unsigned int> competitor;
+		// used for rip list
+		Newest_job		newest_job;
 		
 		// Attributes for fairness optimization
 		// this is needed for every core
@@ -109,7 +85,6 @@ namespace Sched_controller {
 			Genode::Dataspace_capability _mon_ds_cap;
 			
 			// Attributes needed for analyzing rip list correctly
-			long long unsigned *rip;
 			Genode::Dataspace_capability _dead_ds_cap;
 			
 			Optimization_goal _opt_goal;
@@ -132,9 +107,10 @@ namespace Sched_controller {
 			void _deadline_reached(std::string task_str);
 			std::string _get_cause_task(std::string task_str);
 			
-			void _remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause);
-			void _set_arrival_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
-			void _set_to_schedule(std::string task_str);
+			void _remove_task(unsigned int task_nr);
+			void _set_start_time(unsigned int task_nr, unsigned int thread_nr, bool deadline_time_reached);
+			void _set_to_schedule(unsigned int task_nr);
+			bool _query_rip_list(unsigned int task_nr);
 			
 			
 			// Function needed to determine task competitors
@@ -152,7 +128,7 @@ namespace Sched_controller {
 			
 			void start_optimizing();
 			
-			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap);
+			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
 			~Sched_opt();
 
 	};

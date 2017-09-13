@@ -387,6 +387,7 @@ namespace Sched_controller {
 		dead_ds_cap = Genode::env()->ram_session()->alloc(256*sizeof(long long unsigned));
 
 
+
 		rqs[1]=1;
 		rqs[2]=1;
 		_mon_manager.update_rqs(rq_ds_cap);
@@ -414,7 +415,7 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap);
+		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap, dead_ds_cap);
 				
 		//loop forever
 		the_cycle();

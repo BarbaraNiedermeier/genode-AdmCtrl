@@ -100,18 +100,8 @@ namespace Sched_controller {
 		_task.start_time = 0;
 		_task.to_schedule = true;
 		_task.core = core;
-		_task.arrival_time = 0;
-		_task.to_schedule = true;
-		_task.last_job_started = false;
-		_task.id_related = 0;
-		
 		_task.newest_job.foc_id = 0;
-		_task.newest_job.arrival_time = 0;
-		_task.newest_job.dispatched = true;
-		
-		// used to do utilization optimisation
-		_task.utilization = 0;
-		_task.execution_time = 0;
+		_task.newest_job.start_time = 0;
 		
 		// used to do utilization optimisation
 		_task.utilization = 0;
@@ -324,20 +314,17 @@ namespace Sched_controller {
 			}
 			
 			// store foc_id to the correct task
-			std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(_threads[j].thread_name.string());
-			if(it != _tasks.end())
+			for(unsigned int task = 0; task<_tasks.size(); ++task)
 			{
-				// task for this thread found...
-				if(_threads[j].arrival_time > it->second.newest_job.arrival_time)
+				if(!_tasks[task].name.compare(_threads[j].thread_name.string()))
 				{
-					PINF("Optimizer: Task %s has a new job with foc_id %d.", _threads[j].thread_name.string(), _threads[j].foc_id);
-					it->second.newest_job.foc_id = _threads[j].foc_id;
-					
-					// toDo: convert Genode::Affinity::Location to core number (int)
-					//it->second.newest_job.core = _threas[j].affinity.core();
-					it->second.newest_job.dispatched = false;
+					// task for this thread found...
+					if(_threads[j].start_time > _tasks[task].newest_job.start_time)
+						_tasks[task].newest_job.foc_id = _threads[j].foc_id;
 				}
 			}
+				
+			
 			
 			
 			// end of threads-array reached?
@@ -582,11 +569,12 @@ namespace Sched_controller {
 			// The task might have an hard exit or the last job finished its exeution. In both cases it has to be deleted from _tasks
 			
 			// toDo: Query rip list
-			// if it had an hard exit, ...
-			// if (task was found in RIP list || didn't start too often)
-			
+			// if it had an hard exit and is now in RIP list, ...
+			if (_query_rip_list(task_nr))
+			{
 				//... delete it from _tasks
-				//_remove_task(task_nr);
+				_remove_task(task_nr);
+			}
 		}
 		else
 		{
@@ -877,40 +865,47 @@ namespace Sched_controller {
 			}
 		}
 	
-		if(latest_rip_time <= 0)
+	bool Sched_opt::_query_rip_list(unsigned int task_nr)
+	{
+		// This function queries the monitoring objects (threads) to find the thread which caused the deadline miss for thread with thread_nr
+		// It referes to the following global variables:
+		//	_threads -> newest_job.foc_id
+		// 	_mon_manager -> update_dead
+		//	_dead_cs_cap
+		
+		
+		
+		long long unsigned *rip = Genode::env()->rm_session()->attach(_dead_ds_cap);
+		
+		// fill rip list with data
+		_mon_manager->update_dead(_dead_ds_cap);
+		
+		
+		// rip is a 'list of tuples (foc_id, time)' similar to RQ list of Monitor
+		// RIP table size is shown in rip[0]
+		for (unsigned int i=1; i<rip[0]; ++i)
 		{
-			// No Thread in considered time interval was found in rip list
-			PWRN("Optimizer(_get_cause_task): No task which job was executed shortly before the job of task %s (no thread in monitoring or rip list at the desired time interval).", task_str.c_str());
-			return std::string();
-		}
-		//else: Find task belonging to this thread
-		for (auto& task: _tasks)
-		{
-			if(task.second.newest_job.foc_id == job_foc_id)
-				return task.first;
-		}
-		// check if task belonging to this thread was killed/has finished
-		for(auto& task: _ended_tasks)
-		{
-			if(task.second.last_foc_id == job_foc_id)
+			// foc_id is rip[2*i-1], time is rip[2*i]/1000
+			if(_tasks[task_nr].newest_job.foc_id == rip[2*i-1])
 			{
-				PWRN("Optimizer(_get_cause_task): The task, which job was executed shortly before the job of task %s is already dead/finished.", task_str.c_str());
-				return std::string();
+				return true;
 			}
 		}
-		PWRN("Optimizer(_get_cause_task): Foc_id (%llu) of job which was executed shortly before the job of task %s cannot be mapped to a task.", job_foc_id, task_str.c_str());
-		return std::string();
+		
+		return false;
 	}
 	
 	
-	
-	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap)
+	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap)
 	{
 		
 		// set variables for querying monitor data
 		_mon_manager = mon_manager;
 		_threads = sched_threads;
 		_mon_ds_cap = mon_ds_cap;
+		
+		// set variables for querying rip list
+		_dead_ds_cap = dead_ds_cap;
 		
 		// set the number of cores to handle multicore optimization
 		num_cores = sched_num_cores;
