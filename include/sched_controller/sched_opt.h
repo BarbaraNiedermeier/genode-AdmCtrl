@@ -64,8 +64,8 @@ namespace Sched_controller {
 	
 	struct Optimization_task
 	{
-		// static task attributes
-		std::string		name; // This is also used to identify the task
+		// general task attributes
+		std::string		name; // This is used to identify the task
 		
 		unsigned long long	inter_arrival;
 		unsigned long long	deadline;
@@ -86,11 +86,13 @@ namespace Sched_controller {
 		// Attributes for fairness optimization
 		// this is needed for every core
 		
-		bool* 			overload;
 		unsigned int*		value;
 		
-		// attributes for fairness optimization
-		unsigned int*		value; // value is needed for every core
+		double			utilization;
+		unsigned int		execution_time;
+		
+		// use this later to change cores depending on the overload on each core
+		bool* 			overload;
 		
 		// attributes for utilization optimization
 		double			utilization;
@@ -123,7 +125,7 @@ namespace Sched_controller {
 			int accept; // Acceptance niveau for fairness optimization
 			
 			
-			void _query_monitor(std::string task_str, unsigned long long current_time);
+			void _query_monitor(int task_nr, unsigned long long current_time);
 			
 			void _task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(std::string task_str);
@@ -136,24 +138,11 @@ namespace Sched_controller {
 			
 			
 			// Function needed to determine task competitors
-			std::string _get_cause_task(std::string task_str, unsigned int thread_nr);
+			int _get_cause_task(unsigned int task_nr, unsigned int thread_nr);
 			
 			
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
-<<<<<<< b0c003af0f0e95a6617a232e2c577477b2c1a464
-			void start_optimizing();
-			
-			void add_task(unsigned int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
-			
-			// these functions are called by the taskloader
-			bool scheduling_allowed(std::string task_name);
-			void last_job_started(std::string task_name);
-			bool change_core(std::string task_name, unsigned int core);
-			
-			
-			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
-=======
 			
 			void add_task(int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
 			void task_removed(int core, Rq_task::Rq_task **task_ptr); // info from sched_controller that this task has been dequeued
@@ -164,7 +153,6 @@ namespace Sched_controller {
 			void start_optimizing();
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap);
->>>>>>> Remove changes to runqueue
 			~Sched_opt();
 
 	};
