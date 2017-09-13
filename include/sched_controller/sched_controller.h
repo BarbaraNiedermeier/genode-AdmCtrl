@@ -50,6 +50,7 @@ namespace Sched_controller
 			std::vector<Genode::Dataspace_capability> sync_ds_cap_vector;
 			Genode::Dataspace_capability sync_ds_cap;
 			Genode::Dataspace_capability rq_ds_cap;
+			Genode::Dataspace_capability dead_ds_cap;
 			int* rqs;
 			int _num_rqs = 128;
 			int _num_pcores = 0;

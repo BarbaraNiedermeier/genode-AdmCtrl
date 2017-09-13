@@ -25,7 +25,13 @@ namespace Sched_controller {
 		FAIRNESS,
 		UTILIZATION
 	};
-
+	
+	struct Newest_job
+	{
+		unsigned int		foc_id;
+		unsigned long long 	start_time;
+		
+	};
 
 	struct Optimization_task
 	{
@@ -38,12 +44,15 @@ namespace Sched_controller {
 		// dynamische Info
 		int			core;
 		unsigned long long 	start_time;
+		
 		bool			to_schedule;
 		
 		// Pointer zu task
 		Rq_task::Rq_task**	task_ptr;
 		
 		std::vector<unsigned int> competitor;
+		// used for rip list
+		Newest_job		newest_job;
 		
 		// Attributes for fairness optimization
 		// this is needed for every core
@@ -70,6 +79,9 @@ namespace Sched_controller {
 			Genode::Dataspace_capability _rq_ds_cap;
 			Genode::Dataspace_capability _sync_ds_cap;
 			
+			// Attributes needed for analyzing rip list correctly
+			Genode::Dataspace_capability _dead_ds_cap;
+			
 			Optimization_goal _opt_goal;
 			std::vector<Optimization_task> _tasks;
 			Rq_buffer<Rq_task::Rq_task> *_rqs;
@@ -92,6 +104,7 @@ namespace Sched_controller {
 			void _remove_task(unsigned int task_nr);
 			void _set_start_time(unsigned int task_nr, unsigned int thread_nr, bool deadline_time_reached);
 			void _set_to_schedule(unsigned int task_nr);
+			bool _query_rip_list(unsigned int task_nr);
 			
 			
 			// Function needed to determine task competitors
@@ -106,7 +119,7 @@ namespace Sched_controller {
 			
 			void start_optimizing();
 			
-			Sched_opt(int, Rq_buffer<Rq_task::Rq_task>*, Mon_manager::Connection*, Mon_manager::Monitoring_object*, Genode::Dataspace_capability, int*, Genode::Dataspace_capability, Genode::Dataspace_capability);
+			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
 			~Sched_opt();
 
 	};

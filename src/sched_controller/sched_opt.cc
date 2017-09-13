@@ -96,6 +96,8 @@ namespace Sched_controller {
 		_task.task_ptr = nullptr;
 		_task.to_schedule = true;
 		_task.core = core;
+		_task.newest_job.foc_id = 0;
+		_task.newest_job.start_time = 0;
 		
 		// used to do utilization optimisation
 		_task.utilization = 0;
@@ -238,6 +240,19 @@ namespace Sched_controller {
 					new_threads_nr.push_back(j);
 				}
 			}
+			
+			// store foc_id to the correct task
+			for(unsigned int task = 0; task<_tasks.size(); ++task)
+			{
+				if(!_tasks[task].name.compare(_threads[j].thread_name.string()))
+				{
+					// task for this thread found...
+					if(_threads[j].start_time > _tasks[task].newest_job.start_time)
+						_tasks[task].newest_job.foc_id = _threads[j].foc_id;
+				}
+			}
+				
+			
 			
 			
 			// end of threads-array reached?
@@ -476,11 +491,12 @@ namespace Sched_controller {
 			// The task might have an hard exit or the last job finished its exeution. In both cases it has to be deleted from _tasks
 			
 			// toDo: Query rip list
-			// if it had an hard exit, ...
-			// if (task was found in RIP list || didn't start too often)
-			
+			// if it had an hard exit and is now in RIP list, ...
+			if (_query_rip_list(task_nr))
+			{
 				//... delete it from _tasks
-				//_remove_task(task_nr);
+				_remove_task(task_nr);
+			}
 		}
 		else
 		{
@@ -640,6 +656,35 @@ namespace Sched_controller {
 		return -1;
 	}
 	
+	bool Sched_opt::_query_rip_list(unsigned int task_nr)
+	{
+		// This function queries the monitoring objects (threads) to find the thread which caused the deadline miss for thread with thread_nr
+		// It referes to the following global variables:
+		//	_threads -> newest_job.foc_id
+		// 	_mon_manager -> update_dead
+		//	_dead_cs_cap
+		
+		
+		
+		long long unsigned *rip = Genode::env()->rm_session()->attach(_dead_ds_cap);
+		
+		// fill rip list with data
+		_mon_manager->update_dead(_dead_ds_cap);
+		
+		
+		// rip is a 'list of tuples (foc_id, time)' similar to RQ list of Monitor
+		// RIP table size is shown in rip[0]
+		for (unsigned int i=1; i<rip[0]; ++i)
+		{
+			// foc_id is rip[2*i-1], time is rip[2*i]/1000
+			if(_tasks[task_nr].newest_job.foc_id == rip[2*i-1])
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 	void Sched_opt::run_job()
 	{
@@ -742,8 +787,8 @@ namespace Sched_controller {
 	}
 	
 	
-	
-	Sched_opt::Sched_opt(int sched_num_cores, Rq_buffer<Rq_task::Rq_task> *sched__rqs, Mon_manager::Connection *sched_mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability sched_mon_ds_cap, int* sched_rqs, Genode::Dataspace_capability sched_rq_ds_cap, Genode::Dataspace_capability schred_sync_ds_cap)
+	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap)
+
 	{
 		// set runqueue, which shall be influenced
 		_rqs = sched__rqs;
@@ -759,6 +804,10 @@ namespace Sched_controller {
 		
 		_sync_ds_cap = schred_sync_ds_cap;
 		
+		// set variables for querying rip list
+		_dead_ds_cap = dead_ds_cap;
+		
+		// set the number of cores to handle multicore optimization
 		num_cores = sched_num_cores;
 		
 		// default optimization goal = no optimization is done

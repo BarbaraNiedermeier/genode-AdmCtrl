@@ -388,6 +388,9 @@ namespace Sched_controller {
 
 		sync_ds_cap = Genode::env()->ram_session()->alloc(100*sizeof(int));
 		_rqs[0].init_w_shared_ds(sync_ds_cap);
+		
+		dead_ds_cap = Genode::env()->ram_session()->alloc(256*sizeof(long long unsigned));
+
 
 		rqs[1]=1;
 		rqs[2]=1;
@@ -416,7 +419,7 @@ namespace Sched_controller {
 			//PINF("Allocated rq_buffer %d to _pcore %d", i, i);
 		}
 
-		_optimizer = new Sched_opt(_num_cores, _rqs, &_mon_manager, threads, mon_ds_cap, rqs, rq_ds_cap, sync_ds_cap);		
+		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap, dead_ds_cap);
 				
 		//loop forever
 		the_cycle();
