@@ -113,9 +113,12 @@ namespace Sched_controller {
 			
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
-			int add_task(int core, Rq_task::Rq_task task); // add task to task array
-			bool change_core(std::string task_name, int core);
-			void run_job();
+			
+			void add_task(int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
+			void task_removed(int core, Rq_task::Rq_task **task_ptr); // info from sched_controller that this task has been dequeued
+			
+			bool change_core(int core, std::string task_name);
+			bool scheduling_allowed(std::string task_name); // add task as call parameter
 			
 			void start_optimizing();
 			
