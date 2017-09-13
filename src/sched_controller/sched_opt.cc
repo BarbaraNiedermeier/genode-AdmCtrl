@@ -203,37 +203,38 @@ namespace Sched_controller {
 
 		for (unsigned int i=0; i<_tasks.size(); ++i)
 		{
-			PINF("Optimizer: Change core of task %s from %d to %d.", task_name.c_str(), it->second.core, core);
-			it->second.core = core;
-			return true;
+			if(_tasks[i].name.compare(task_name) == 0)
+			{
+				PINF("Optimizer: Change core of task %s from %d to %d.", _tasks[i].name.c_str(), _tasks[i].core, core);
+				_tasks[i].core = core;
+				return true;
+			}
 		}
-		// look in _ended_tasks for requested task
-		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(task_name);
-		if(it_end != _ended_tasks.end())
-		{
-			
-			// the requested task is in list of ended tasks
-			std::string reason = (it_end->second.cause_of_death == FINISHED)? "the task has finished its last job" : "the task was killed";
-			PINF("Optimizer: Requested task for changing core (%s) already ended (cause: %s).", task_name.c_str(), reason.c_str());
-			return false;
-			
-		}
-		PINF("Optimizer: Requested task for changing core (%s) was not found in task lisk of actual or ended tasks.", task_name.c_str());
+		PINF("Optimizer: Requested task for changing core (%s) was not found in task lisk of optimizer.", task_name.c_str());
 		return false;
 	}
 	
 	
-
-	bool Sched_opt::scheduling_allowed()
+	bool Sched_opt::scheduling_allowed(std::string task_name)
 	{
+		// This function looks up the to_schedule value of the requested task.
+		// It should be called by Taskloader before starting a task (some where in _session_component::start()).
+		// It referes to the following global variables:
+		//	_tasks -> name, to_schedule
 		
-		// This should be called by Taskloader_session_component::start(), before starting a task
 		
-		// make an Task as input-parameter
-		// get its task_name
 		// look in _tasks for task_name
-		// return its value of to_schedule
+		for (unsigned int task=0; task<_tasks.size(); ++task)
+		{
+			if(!_tasks[task].name.compare(task_name))
+			{
+				// task was found
+				PINF("Optimizer: Query scheduling allowance for task %s: %d", task_name.c_str(), _tasks[task].to_schedule);
+				return _tasks[task].to_schedule;
+			}
+		}
 		
+		PINF("Optimizer: Requested task for scheduling allowance (%s) was not found in task lisk of optimizer.", task_name.c_str());
 		return false;
 	}
 	
@@ -320,7 +321,10 @@ namespace Sched_controller {
 				{
 					// task for this thread found...
 					if(_threads[j].start_time > _tasks[task].newest_job.start_time)
+					{
+						PINF("Optimizer: Task %s has a new job with foc_id %d.", _threads[j].thread_name.string(), _threads[j].foc_id);
 						_tasks[task].newest_job.foc_id = _threads[j].foc_id;
+					}
 				}
 			}
 				
@@ -364,8 +368,7 @@ namespace Sched_controller {
 		{
 			case 0:
 			{
-				// there are no new tasks
-				// job_executed stays false
+				// there are no new tasks => job_executed remains false
 				PINF("Optimizer: No new job for task %s", _tasks[task_nr].name.c_str());
 				break;
 			}
@@ -376,14 +379,9 @@ namespace Sched_controller {
 				
 				bool deadline_time_reached = (current_time >= _threads[new_threads_nr[0]].start_time + _tasks[task_nr].deadline);
 				
-				if (deadline_time_reached) // the job has no time left to be executed
+				if (deadline_time_reached) // the job should have been executed
 				{
-					// the task should now have been executed
-					
-					// determine if it had a deadline miss or correct execution
-					// -> update value correspondingly and react to deadline miss
-					// set the to_schedules values
-					
+					// determine if the job had a deadline miss or correct execution and set the to_schedules values
 					_task_executed(task_nr, new_threads_nr[0], true);
 					
 					// set the tasks execution time to the one of this job
@@ -434,20 +432,20 @@ namespace Sched_controller {
 					}
 					
 					// only set to_schedule if the thread is the most recent thread which reached its deadline time
-					bool to_schedule =( ((i == most_recent_thread) && recent_deadline_time_reached) || ((i == second_recent_thread) && !recent_deadline_time_reached) );
+					bool consider_this_thread =( ((i == most_recent_thread) && recent_deadline_time_reached) || ((i == second_recent_thread) && !recent_deadline_time_reached) );
 					
-					_task_executed(task_nr, i, to_schedule);
+					_task_executed(task_nr, i, consider_this_thread);
 					
-					if (to_schedule)
+					if (consider_this_thread)
 					{
 						// set the tasks execution time to the one of this job
 						_tasks[task_nr].execution_time = _threads[i].execution_time.value;
+						PINF("Optimizer: Set exec_time for task %s", _tasks[task_nr].name.c_str());
 					}
 				}
 				
 				// set start_time for next iteration
 				_set_start_time(task_nr, most_recent_thread, recent_deadline_time_reached);
-				
 			}
 		}
 		
@@ -457,14 +455,14 @@ namespace Sched_controller {
 		{
 			// this task has no new job in threads array although it would be time to
 			
-		
+			// if this task already started ...
 			if(_tasks[task_nr].start_time > 0)
 			{
+				// ... determine why it didn't start
 				PINF("Optimizer: task %s had already had some tasks before, but no new one.", _tasks[task_nr].name.c_str());
 				_task_not_executed(task_nr);
 			}
-			// If there is no thread in monitoring data that matches this task and the start_time is not set until now
-			// -> query again later...
+			// else: the task did not start until now -> query again later...
 		}
 		
 	}
@@ -566,15 +564,14 @@ namespace Sched_controller {
 		
 		{
 			// The task should be executed but didn't start.
-			// The task might have an hard exit or the last job finished its exeution. In both cases it has to be deleted from _tasks
 			
-			// toDo: Query rip list
 			// if it had an hard exit and is now in RIP list, ...
 			if (_query_rip_list(task_nr))
 			{
 				//... delete it from _tasks
 				_remove_task(task_nr);
 			}
+			//else: the task may just finished its last job
 		}
 		else
 		{
@@ -708,7 +705,7 @@ namespace Sched_controller {
 			{
 				case FAIRNESS:
 				{
-					PDBG("The optimization goal 'fairness' will be used.");
+					PDBG("The optimization goal 'fairness' is used.");
 					
 					if(max_value_nr < 0)
 					{
@@ -729,7 +726,7 @@ namespace Sched_controller {
 				}
 				case UTILIZATION:
 				{
-					PDBG("The optimization goal 'utilization' will be used.");
+					PDBG("The optimization goal 'utilization' is used.");
 					
 					if(max_util_nr < 0)
 					{

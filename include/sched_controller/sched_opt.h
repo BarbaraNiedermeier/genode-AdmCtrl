@@ -124,7 +124,7 @@ namespace Sched_controller {
 			void task_removed(int core, Rq_task::Rq_task **task_ptr); // info from sched_controller that this task has been dequeued
 			
 			bool change_core(int core, std::string task_name);
-			bool scheduling_allowed(); // add task as call parameter
+			bool scheduling_allowed(std::string task_name); // add task as call parameter
 			
 			void start_optimizing();
 			
