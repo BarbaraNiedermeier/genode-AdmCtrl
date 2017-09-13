@@ -70,6 +70,13 @@ namespace Sched_controller {
 			
 		};
 		root.for_each_sub_node("goal", fn);
+		
+		// set query interval
+		std::vector<char> interval(32);
+		root.sub_node("query_interval").value(interval.data(), interval.size());
+		query_intervall = std::stoi(interval.data());
+		PDBG("Optimizer: The query interval is set to %d.", query_intervall);
+		
 		rm->detach(xml);
 		
 		PDBG("Optimizer - Finish parsing XML file.");
@@ -89,6 +96,10 @@ namespace Sched_controller {
 		_task.task_ptr = nullptr;
 		_task.to_schedule = true;
 		_task.core = core;
+		
+		// used to do utilization optimisation
+		_task.utilization = 0;
+		_task.execution_time = 0;
 		
 		// for all cores the value is initially 0
 		for (int i=0; i < num_cores; ++i)
@@ -154,33 +165,8 @@ namespace Sched_controller {
 	
 	void Sched_opt::start_optimizing()
 	{
-		
-		switch( _opt_goal )
-		{
-			case NONE:
-				PDBG("The optimization goal 'none' has been chosen.");
-				break;
-			case FAIRNESS:
-				PDBG("The optimization goal 'fairness' has been chosen.");
-				_optimize_fairness();
-				break;
-			case UTILIZATION:
-				PDBG("The optimization goal 'utilization' has been chosen.");
-				PDBG("No optimization is done until now.");
-				break;	
-			default:
-				PDBG("No optimization goal has been chosen.");
-				
-		}
-	}
-	
-	void Sched_opt::_optimize_fairness()
-	{
-		
-		PDBG("BN ------------------------------- Arrived in optimize_fairness.");
-		
-		
-		// frage Monitordaten ab und aktualisieren den Wert des tasks, dessen Deadline angeblich erreicht ist.
+		// This function determines if any thask has a job which reached its time to have a deadline
+		PDBG("Optimizer: ------------------------------- start optimizing.");
 		
 		/*
 		while (_opt_goal != NONE)
@@ -209,13 +195,12 @@ namespace Sched_controller {
 		
 		
 		*/
-		
 		PDBG("BN ------------------------------- No optimization is done until now.");
 		
 	}
 	
 	
-	void Sched_opt::_job_finished(int task_nr, unsigned long long current_time)
+	void Sched_opt::_query_monitor(int task_nr, unsigned long long current_time)
 	{
 		// This function query monitoring information and analyzes it. Then it reacts correspondingly by adjusting the value, reacting on deadline misses and setting the to_schedule flags.
 		// Although it sets the start_time if there was a job.
@@ -235,13 +220,11 @@ namespace Sched_controller {
 		bool threads_array_ended = false;
 		std::vector<unsigned int> new_threads_nr;
 		
-		// fill threads with data
+		// fill _threads with data
 		_mon_manager->update_info(_mon_ds_cap);
 		
-		
-		// toDo: loop through the threads array of the correct core (_tasks[task_nr].core)
-		
-		// loop through threads array
+		// loop through _threads array
+		PINF("Optimizer: Searching in monitoring list for jobs with name %s", _tasks[task_nr].name.c_str());
 		for(int j=0; j<100; ++j)
 		{
 			
@@ -251,6 +234,7 @@ namespace Sched_controller {
 				// matching task found -> check if this thread is a new job
 				if(threads[j].start_time >= _tasks[task_nr].start_time)
 				{
+					PINF("Optimizer: Another new job with name %s", _threads[j].thread_name.string());
 					new_threads_nr.push_back(j);
 				}
 			}
@@ -261,16 +245,14 @@ namespace Sched_controller {
 			{
 				if (threads_array_ended)
 				{
-					// Reached end of monitoring list without finding a matching thread to _tasks[task_nr] 
-					// -> new_threads_nr is still empty
-					PINF("No entry found in monitoring list for task with name %s", threads[j].thread_name.string());
-					
+					// Reached end of monitoring list
+					PINF("Optimizer: End of monitoring list reached.");
 					break;
 				}
 				else
 				{
-					// this is the first element of the array.
-					// the next time, when id==0, the end of threads-array has reached
+					// this is the first element of the array. Next time, when id==0, the end of threads-array has reached
+					PINF("Optimizer: First element in monitoring list detected.");
 					threads_array_ended = true;
 				}
 			}
@@ -290,12 +272,13 @@ namespace Sched_controller {
 		// determine if the recent job of task _tasks[task_nr] started its execution and react correspondingly (call _task_not_executed(...) or _task_executed(...))
 		bool job_executed = false;
 		
-		switch(new_threads_nr.size())
+		switch (new_threads_nr.size())
 		{
 			case 0:
 			{
 				// there are no new tasks
 				// job_executed stays false
+				PINF("Optimizer: No new job for task %s", _tasks[task_nr].name.c_str());
 				break;
 			}
 			case 1:
@@ -307,13 +290,21 @@ namespace Sched_controller {
 				
 				if (deadline_time_reached)
 				{
+					// the task should now have been executed
+					
 					// determine if it had a deadline miss or correct execution
 					// -> update value correspondingly and react to deadline miss
-					// set to_schedules
+					// set the to_schedules values
+					
 					_task_executed(task_nr, new_threads_nr[0], true);
 					
+					// set the tasks execution time to the one of this job
+					_tasks[task_nr].execution_time = _threads[new_threads_nr[0]].execution_time.value;
+					
 				}
-				// set start_time for current or next iteration
+				// else: the job has still some time left for execution 
+				
+				// set start_time for current/next iteration
 				_set_start_time(task_nr, new_threads_nr[0], deadline_time_reached);
 				break;
 			}
@@ -355,11 +346,19 @@ namespace Sched_controller {
 					
 					// only set to_schedule if the thread is the most recent thread which reached its deadline time
 					bool to_schedule =( ((i == most_recent_thread) && recent_deadline_time_reached) || ((i == second_recent_thread) && !recent_deadline_time_reached) );
+					
 					_task_executed(task_nr, i, to_schedule);
+					
+					if (to_schedule)
+					{
+						// set the tasks execution time to the one of this job
+						_tasks[task_nr].execution_time = _threads[i].execution_time.value;
+					}
 				}
 				
 				// set start_time for next iteration
 				_set_start_time(task_nr, most_recent_thread, recent_deadline_time_reached);
+				
 			}
 		}
 		
@@ -373,12 +372,13 @@ namespace Sched_controller {
 			// Situation 3: There are new threads, but they only belong to future iterations (start_time is wrong)
 			
 		
-		
 			if(_tasks[task_nr].start_time > 0)
 			{
+				PINF("Optimizer: task %s had already had some tasks before, but no new one.", _tasks[task_nr].name.c_str());
 				_task_not_executed(task_nr);
 			}
-			// If there is no thread in monitoring data that matches this task. -> Query again later.
+			// If there is no thread in monitoring data that matches this task and the start_time is not set until now
+			// -> query again later...
 		}
 		
 		
@@ -401,15 +401,17 @@ namespace Sched_controller {
 	
 	void Sched_opt::_task_executed(unsigned int task_nr, unsigned int thread_nr, bool set_to_schedules)
 	{
-		// This function handles the situation, when a job of a task has been executed and its deadline time has already reched.
+		// This function handles the situation, when a job of a task should have been executed and its deadline time has already reched.
 		// Depending on the exit_time of the thread, the tasks value is in-/decreased and the deadline miss is handled
 		// It referes to the following global variables:
 		//	_tasks -> value, rq_task, competitor (name), core
 		//	threads -> start_time, exit_time
 	
 		unsigned int core = _tasks[task_nr].core;
-		// determine if there was an soft-exit before deadline
-		if(threads[thread_nr].exit_time <= threads[thread_nr].start_time + _tasks[task_nr].rq_task.deadline)
+		
+		
+		// determine if there was an soft-exit before reaching the deadline time
+		if((_threads[thread_nr].exit_time > 0) && (_threads[thread_nr].exit_time <= _threads[thread_nr].start_time + _tasks[task_nr].deadline))
 		{
 			// job was executed before reaching its deadline
 			
@@ -446,6 +448,14 @@ namespace Sched_controller {
 			_tasks[task_nr].competitor.push_back(cause_task_nr);
 		}
 		
+		// calculate the utilization
+		if(_threads[thread_nr].exit_time > 0)
+		{
+			unsigned int exec_diff = _threads[thread_nr].exit_time - _tasks[task_nr].execution_time;
+			double new_util = exec_diff / _tasks[task_nr].inter_arrival;
+			_tasks[task_nr].utilization = new_util;
+		}
+		
 		// if the to_schedules shall be set, ...
 		if(set_to_schedules)
 			_set_to_schedule(task_nr);
@@ -459,14 +469,13 @@ namespace Sched_controller {
 		//	_tasks
 		
 		
-		// toDo: query to_schedule
-		
 		// should this task be executed?
 		if(_tasks[task_nr].to_schedule)
 		{
-			// the task should be executed but didn't start
-			// The task might have an hard exit or finished its exeution. In both cases it has to be deleted from _tasks
+			// The task should be executed but didn't start.
+			// The task might have an hard exit or the last job finished its exeution. In both cases it has to be deleted from _tasks
 			
+			// toDo: Query rip list
 			// if it had an hard exit, ...
 			// if (task was found in RIP list || didn't start too often)
 			
@@ -484,37 +493,83 @@ namespace Sched_controller {
 	}
 	
 	void Sched_opt::_set_to_schedule(unsigned int task_nr)
-	{
-		// This function sets the to_schedule of the thask with max value to true.
+	{	
+		// This function sets the to_schedule of the thask with max value/max utilization to true.
 		// It referes to the following global variables:
-		//	_tasks
+		//	_tasks -> competitor, core, value, to_schedule, utilization
 		
 		if(!_tasks[task_nr].competitor.empty())
 		{
-			// find the task with max value
+			// find the task with max value and the task with max utilization
 			unsigned int max_value_nr = -1;
+			unsigned int max_util_nr = -1;
 			for(unsigned int i=0; i<_tasks[task_nr].competitor.size(); ++i)
 			{
-				if( (_tasks[_tasks[task_nr].competitor[i]].core == _tasks[task_nr].core) && (_tasks[_tasks[task_nr].competitor[i]].value[_tasks[_tasks[task_nr].competitor[i]].core] > _tasks[task_nr].value[_tasks[task_nr].core]))
+				if (_tasks[_tasks[task_nr].competitor[i]].core == _tasks[task_nr].core)
 				{
-					if((max_value_nr < 0) || (_tasks[_tasks[task_nr].competitor[i]].value[_tasks[_tasks[task_nr].competitor[i]].core] > _tasks[max_value_nr].value[_tasks[max_value_nr].core]))
-						max_value_nr = _tasks[task_nr].competitor[i];
+					// find the task with max value
+					if(_tasks[_tasks[task_nr].competitor[i]].value[_tasks[_tasks[task_nr].competitor[i]].core] > _tasks[task_nr].value[_tasks[task_nr].core])
+					{
+						if((max_value_nr < 0) || (_tasks[_tasks[task_nr].competitor[i]].value[_tasks[_tasks[task_nr].competitor[i]].core] > _tasks[max_value_nr].value[_tasks[max_value_nr].core]))
+							max_value_nr = _tasks[task_nr].competitor[i];
+					}
+					// find the task with max utilization
+					if(_tasks[_tasks[task_nr].competitor[i]].utilization > _tasks[task_nr].utilization)
+					{
+						if((max_util_nr < 0) || (_tasks[_tasks[task_nr].competitor[i]].utilization > _tasks[max_util_nr].utilization))
+							max_util_nr = _tasks[task_nr].competitor[i];
+					}
 				}
 			}
-			if(max_value_nr < 0)
+			
+			
+			switch( _opt_goal )
 			{
-				// this task is the one with max value
-				_tasks[task_nr].to_schedule = true;
-				for (unsigned int i=0; i<_tasks[task_nr].competitor.size(); ++i)
+				case FAIRNESS:
 				{
-					_tasks[_tasks[task_nr].competitor[i]].to_schedule = false;
+					PDBG("The optimization goal 'fairness' will be used.");
+					
+					if(max_value_nr < 0)
+					{
+						// this task is the one with max value
+						_tasks[task_nr].to_schedule = true;
+						for (unsigned int i=0; i<_tasks[task_nr].competitor.size(); ++i)
+						{
+							_tasks[_tasks[task_nr].competitor[i]].to_schedule = false;
+						}
+					}
+					else
+					{
+						// the task _tasks[max_value_nr] is the one with max value
+						_tasks[task_nr].to_schedule = false;
+						_tasks[max_value_nr].to_schedule = true;
+					}
+					break;
 				}
-			}
-			else
-			{
-				// the task _tasks[max_value_nr] is the one with max value
-				_tasks[task_nr].to_schedule = false;
-				_tasks[max_value_nr].to_schedule = true;
+				case UTILIZATION:
+				{
+					PDBG("The optimization goal 'utilization' will be used.");
+					
+					if(max_util_nr < 0)
+					{
+						// this task is the one with max utilization
+						_tasks[task_nr].to_schedule = true;
+						for (unsigned int i=0; i<_tasks[task_nr].competitor.size(); ++i)
+						{
+							_tasks[_tasks[task_nr].competitor[i]].to_schedule = false;
+						}
+					}
+					else
+					{
+						// the task _tasks[max_util_nr] is the one with max utilization
+						_tasks[task_nr].to_schedule = false;
+						_tasks[max_util_nr].to_schedule = true;
+					}
+					break;
+				}
+				default:
+					PDBG("No optimization goal is set, hence the task scheduling is not influenced.");
+				
 			}
 		}
 		

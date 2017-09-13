@@ -30,7 +30,6 @@ namespace Sched_controller {
 	struct Optimization_task
 	{
 		// general task attributes
-		//char			name[24]; // This is used to identify the task
 		std::string		name; // This is used to identify the task
 		
 		Rq_task::Rq_task	rq_task; // needed for update of _rqs and to access inter_arrival and deadline
@@ -49,9 +48,13 @@ namespace Sched_controller {
 		// Attributes for fairness optimization
 		// this is needed for every core
 		
-		bool* 			overload;
 		unsigned int*		value;
 		
+		double			utilization;
+		unsigned int		execution_time;
+		
+		// use this later to change cores depending on the overload on each core
+		bool* 			overload;
 		
 		
 		
@@ -81,7 +84,7 @@ namespace Sched_controller {
 			int accept; // Acceptance niveau for fairness optimization
 			
 			
-			void _job_finished(int task_nr, unsigned long long current_time);
+			void _query_monitor(int task_nr, unsigned long long current_time);
 			
 			void _task_executed(unsigned int task_nr, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(unsigned int task_nr);
@@ -91,8 +94,7 @@ namespace Sched_controller {
 			void _set_to_schedule(unsigned int task_nr);
 			
 			
-			// Functions needed for fairness optimization
-			void _optimize_fairness();
+			// Function needed to determine task competitors
 			int _get_cause_task(unsigned int task_nr, unsigned int thread_nr);
 			
 			
