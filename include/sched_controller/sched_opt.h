@@ -17,7 +17,6 @@
 #include "mon_manager/mon_manager.h"
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace Sched_controller {
 
@@ -28,6 +27,7 @@ namespace Sched_controller {
 		UTILIZATION
 	};
 	
+	// this struct is used to determine the task corresponding to the job at the rip list
 	struct Newest_job
 	{
 		unsigned int		foc_id;
@@ -54,8 +54,7 @@ namespace Sched_controller {
 		Newest_job		newest_job;// used for rip list
 		bool* 			overload; // use this later to change cores depending on the overload on each core
 		
-
-		std::vector<unsigned int> competitor;
+		std::vector<std::string> competitor;
 		// used for rip list
 		Newest_job		newest_job;
 		
@@ -88,7 +87,8 @@ namespace Sched_controller {
 			Genode::Dataspace_capability _dead_ds_cap;
 			
 			Optimization_goal _opt_goal;
-			std::vector<Optimization_task> _tasks;
+			std::vector<Optimization_task> _old_task;
+			std::unordered_map<std::string, Optimization_task> _tasks;
 			int num_cores;
 			bool* overload_at_core;
 			
@@ -100,21 +100,19 @@ namespace Sched_controller {
 			int accept; // Acceptance niveau for fairness optimization
 			
 			
-			void _query_monitor(int task_nr, unsigned long long current_time);
+			void _query_monitor(std::string task_str, unsigned long long current_time);
 			
 			void _task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(std::string task_str);
-			void _deadline_reached(std::string task_str);
-			std::string _get_cause_task(std::string task_str);
 			
-			void _remove_task(unsigned int task_nr);
-			void _set_start_time(unsigned int task_nr, unsigned int thread_nr, bool deadline_time_reached);
-			void _set_to_schedule(unsigned int task_nr);
-			bool _query_rip_list(unsigned int task_nr);
+			void _remove_task(std::string task_str);
+			void _set_start_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
+			void _set_to_schedule(std::string task_str);
+			bool _query_rip_list(std::string task_str);
 			
 			
 			// Function needed to determine task competitors
-			int _get_cause_task(unsigned int task_nr, unsigned int thread_nr);
+			std::string _get_cause_task(std::string task_str, unsigned int thread_nr);
 			
 			
 		public:
