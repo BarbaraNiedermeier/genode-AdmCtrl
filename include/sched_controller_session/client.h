@@ -46,6 +46,8 @@ namespace Sched_controller {
 		{
 			return call<Rpc_update_rq_buffer>(core);
 		}
+		
+		// functions to control the optimization
 		void optimize ()
 		{
 			PDBG("Calling Rpc-Interface function to optimize task scheduluing.");
@@ -55,6 +57,23 @@ namespace Sched_controller {
 		{
 			PDBG("Calling Rpc-Interface function to set the optimization goal.");
 			call<Rpc_set_opt_goal>(xml_ds_cap);
+		}
+		
+		
+		bool scheduling_allowed (std::string task_name)
+		{
+			PDBG("Calling Rpc-Interface function to query scheduling permission.");
+			return call<Rpc_scheduling_allowed>(task_name);
+		}
+		void last_job_started (std::string task_name)
+		{
+			PDBG("Calling Rpc-Interface function to inform optimizer about the start of the last job.");
+			call<Rpc_last_job_started>(task_name);
+		}
+		bool change_core (std::string task_name, int core)
+		{
+			PDBG("Calling Rpc-Interface function inform the optimizer about a core change of a task.");
+			return call<Rpc_change_core>(task_name, core);
 		}
 
 	};

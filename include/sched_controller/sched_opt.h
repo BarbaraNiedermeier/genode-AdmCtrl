@@ -26,44 +26,50 @@ namespace Sched_controller {
 		FAIRNESS,
 		UTILIZATION
 	};
+	enum Cause_of_death {
+		KILLED, // task was killed by user (hard exit)
+		FINISHED // task finished its last job (soft exit)
+	};
+	struct Ended_task
+	{
+		std::string		name;
+		unsigned int		last_foc_id; // foc_id of last job
+		Cause_of_death		cause_of_death;
+	};
 	
 	// this struct is used to determine the task corresponding to the job at the rip list
 	struct Newest_job
 	{
 		unsigned int		foc_id;
-		unsigned long long 	start_time;
+		unsigned long long 	arrival_time;
+		bool			dispatched;
 		
 	};
 
 	struct Optimization_task
 	{
-		// general task attributes
-		std::string		name; // This is used to identify the task
+		// static task attributes
+		std::string		name; // This is also used to identify the task
 		
 		Rq_task::Rq_task	rq_task; // needed for update of _rqs and to access inter_arrival and deadline
 		
 		
-		// dynamische Info
+		// dynamic task attributes
 		int			core;
-		unsigned long long 	start_time;
-		
+		unsigned long long 	arrival_time; // this is the jobs earliest possible start time
 		bool			to_schedule;
-		
+		bool			last_job_started; // used to indicate thelast execution of a job belonging to this task
 		std::vector<std::string> competitor;
-		// used for rip list
-		Newest_job		newest_job;
+		Newest_job		newest_job;// used for rip list
+		bool* 			overload; // use this later to change cores depending on the overload on each core
 		
-		// Attributes for fairness optimization
-		// this is needed for every core
 		
-		unsigned int*		value;
+		// attributes for fairness optimization
+		unsigned int*		value; // value is needed for every core
 		
+		// attributes for utilization optimization
 		double			utilization;
 		unsigned int		execution_time;
-		
-		// use this later to change cores depending on the overload on each core
-		bool* 			overload;
-		
 		
 		
 	};	
@@ -79,11 +85,13 @@ namespace Sched_controller {
 			Genode::Dataspace_capability _sync_ds_cap;
 			
 			// Attributes needed for analyzing rip list correctly
+			long long unsigned *rip;
 			Genode::Dataspace_capability _dead_ds_cap;
 			
 			Optimization_goal _opt_goal;
-			std::vector<Optimization_task> _old_task;
 			std::unordered_map<std::string, Optimization_task> _tasks;
+			std::unordered_map<std::string, Ended_task> _ended_tasks;
+			
 			int num_cores;
 			bool* overload_at_core;
 			
@@ -99,11 +107,12 @@ namespace Sched_controller {
 			
 			void _task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(std::string task_str);
+			void _job_reached_deadline(std::string task_str);
+			std::string _get_cause_task(std::string task_str);
 			
-			void _remove_task(std::string task_str);
-			void _set_start_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
+			void _remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause);
+			void _set_arrival_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
 			void _set_to_schedule(std::string task_str);
-			bool _query_rip_list(std::string task_str);
 			
 			
 			// Function needed to determine task competitors
@@ -112,14 +121,15 @@ namespace Sched_controller {
 			
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
+			void start_optimizing();
 			
 			void add_task(int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
-			void task_removed(int core, Rq_task::Rq_task **task_ptr); // info from sched_controller that this task has been dequeued
 			
-			bool change_core(int core, std::string task_name);
-			bool scheduling_allowed(std::string task_name); // add task as call parameter
+			// these functions are called by the taskloader
+			bool scheduling_allowed(std::string task_name);
+			void last_job_started(std::string task_name);
+			bool change_core(std::string task_name, int core);
 			
-			void start_optimizing();
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
 			~Sched_opt();

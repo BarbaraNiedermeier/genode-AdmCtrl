@@ -241,21 +241,12 @@ namespace Sched_controller {
 	* BN - Optimize task scheduling
 	*
 	*/
-	void Sched_controller::set_opt_goal(Genode::Ram_dataspace_capability xml_ds_cap)
+	Sched_opt* Sched_controller::get_optimizer()
 	{
-		_optimizer->set_goal(xml_ds_cap);
-	}
-
-
-	void Sched_controller::optimize()
-	{
-		_optimizer->start_optimizing();
+		return _optimizer;
 	}
 	
 	
-	
-
-
 
 
 
