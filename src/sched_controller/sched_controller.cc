@@ -107,11 +107,6 @@ namespace Sched_controller {
 		if (core < _num_cores) {
 			int success = _rqs[core].deq(task_ptr);
 			PINF("Removed task from core %d, pointer is %p", core, *task_ptr);
-			if(success)
-			{
-				// inform optimizer about dequeue of the task
-				_optimizer->task_removed(core, task_ptr);
-			}
 			return success;
 		}
 
