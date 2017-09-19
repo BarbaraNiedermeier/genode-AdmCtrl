@@ -411,8 +411,8 @@ namespace Sched_controller {
 			task.task_strategy = Rq_task::Task_strategy::priority;
 			task.prio = rqs[2*i];
 			//PDBG("enqueue task\n");
-			allocate_task(task);
-			//_rqs->enq(task);
+			//allocate_task(task);
+			_rqs->enq(task);
 		}
 		//guess number of tasks in rq smaller than 50
 		Genode::Ram_dataspace_capability _ds=Genode::env()->ram_session()->alloc(100*sizeof(int));
