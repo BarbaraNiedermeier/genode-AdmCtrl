@@ -437,7 +437,7 @@ namespace Sched_controller {
 		list[1]=0;
 		sync.deploy(_ds, 0, 0);
 		Genode::env()->ram_session()->free(_ds);
-		the_cycle();
+		//the_cycle();
 	}
 
 }
