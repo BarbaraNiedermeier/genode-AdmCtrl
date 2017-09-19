@@ -21,6 +21,8 @@
 #include "mon_manager/mon_manager.h"
 #include "timer_session/connection.h"
 
+#include <cstring>
+
 namespace Sched_controller {
 
 	/**
@@ -58,16 +60,24 @@ namespace Sched_controller {
 	 */
 	int Sched_controller::enq(int core, Rq_task::Rq_task task)
 	{
-		PINF("Task is now enqueued to run queue %d", core);
+		PINF("Task with name %s, is now enqueued to run queue %d", task.name, core);
 
-		if (core < _num_cores) {
+		if (core < _num_cores)
+		{
+			task_map.insert({task.name, task});
+			//Execute sufficient schedulability test
+			if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
+			{
+				//If sufficient test fails --> execute RTA (exact test)
+				if (!fp_alg.RTA(&task, &_rqs[core]))
+				{
+					return -1;
+				}
+			}
 			int success = _rqs[core].enq(task);
 			return success;
 		}
-
-
 		return -1;
-
 	}
 
 	/**
@@ -88,6 +98,16 @@ namespace Sched_controller {
 		}
 
 		return -1;
+	}
+
+	void Sched_controller::init_ds(int num_rqs, int num_cores)
+	{
+		int ds_size = num_cores*(4 * sizeof(int)) + (num_rqs * sizeof(Rq_task::Rq_task));
+		_rqs = new Rq_buffer<Rq_task::Rq_task>[num_cores];
+		for (int i = 0; i < num_cores; i++) {
+			sync_ds_cap_vector.emplace_back(Genode::env()->ram_session()->alloc(ds_size));
+			_rqs[i].init_w_shared_ds(sync_ds_cap_vector.back());
+		}
 	}
 
 	void Sched_controller::set_sync_ds(Genode::Dataspace_capability ds_cap)
@@ -339,6 +359,43 @@ namespace Sched_controller {
 	Sched_controller::~Sched_controller()
 	{
 
+	}
+
+	int Sched_controller::update_rq_buffer(int core)
+	{
+		PINF("Update Rq_buffer for core %d!", core);
+		_rqs[core].init_w_shared_ds(sync_ds_cap_vector.at(core));
+		Mon_manager::Monitoring_object *threads = Genode::env()->rm_session()->attach(mon_ds_cap);
+		_mon_manager.update_rqs(rq_ds_cap);
+		_mon_manager.update_info(mon_ds_cap);
+
+		std::unordered_map<std::string, Rq_task::Rq_task>::iterator it;
+		for(int i=1; i<= rqs[0]; ++i){
+			Rq_task::Rq_task task;
+			task.task_id = rqs[2*i-1];
+			task.prio = rqs[2*i];
+			for(int j=0; j<100; ++j)
+			{
+				if(threads[j].foc_id == task.task_id)
+				{
+					it = task_map.find(threads[j].thread_name.string());
+					if (it != task_map.end())
+					{
+						task.wcet = it->second.wcet;
+						task.inter_arrival = it->second.inter_arrival;
+						task.deadline = it->second.deadline;
+						strcpy(task.name, it->second.name);
+						_rqs[core].enq(task);
+					}
+					break;
+				}
+				if(threads[j].foc_id == 0 && threads[j].prio == 0)
+				{
+					break;
+				}
+			}
+		}
+		return 0;
 	}
 
 	void Sched_controller::the_cycle() {

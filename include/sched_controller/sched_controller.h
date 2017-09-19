@@ -23,6 +23,7 @@
 #include "sched_controller/rq_buffer.h"
 #include "rq_task/rq_task.h"
 #include <base/signal.h>
+#include "sched_controller/sched_alg.h"
 
 namespace Sched_controller
 {
@@ -44,6 +45,7 @@ namespace Sched_controller
 			Sync::Connection sync;
 			Timer::Connection _timer;
 			Genode::Dataspace_capability mon_ds_cap;
+			std::vector<Genode::Dataspace_capability> sync_ds_cap_vector;
 			Genode::Dataspace_capability sync_ds_cap;
 			Genode::Dataspace_capability rq_ds_cap;
 			int* rqs;
@@ -59,27 +61,33 @@ namespace Sched_controller
 			Genode::Trace::Execution_time idlelast0;
 			Genode::Trace::Execution_time idlelast1;
 			Genode::Trace::Execution_time idlelast2;
-			Genode::Trace::Execution_time idlelast3;			
-			
+			Genode::Trace::Execution_time idlelast3;
+			std::unordered_map<std::string, Rq_task::Rq_task> task_map;
+
 			int _set_num_pcores();
 			int _init_rqs(int);
 			int _init_pcores();
 			int _init_runqueues();
-			int enq(int, Rq_task::Rq_task);
+
 			int deq(int, Rq_task::Rq_task**);
 			void the_cycle();
 
+			Sched_alg fp_alg;
+
 		public:
 
+			int enq(int, Rq_task::Rq_task);
 			void allocate_task(Rq_task::Rq_task);
 			void task_to_rq(int, Rq_task::Rq_task*);
 			int get_num_rqs();
 			void which_runqueues(std::vector<Runqueue>*, Rq_task::Task_class, Rq_task::Task_strategy);
 			double get_utilization(int);
 			std::forward_list<Pcore*> get_unused_cores();
+			void init_ds(int num_rqs, int num_cores);
 			void set_sync_ds(Genode::Dataspace_capability);
 			int are_you_ready();
 			int get_num_cores();
+			int update_rq_buffer(int core);
 
 			Sched_controller();
 			~Sched_controller();

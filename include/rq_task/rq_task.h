@@ -8,6 +8,8 @@
 #ifndef _INCLUDE__RQ_TASK__RQ_TASK_H_
 #define _INCLUDE__RQ_TASK__RQ_TASK_H_
 
+#include <string>
+
 namespace Rq_task
 {
 
@@ -21,11 +23,12 @@ namespace Rq_task
 			int task_id;
 			Task_class task_class;
 			Task_strategy task_strategy;
-			float deadline;
-			float wcet;
-			float inter_arrival;
+			unsigned long long deadline;
+			unsigned long long wcet;
+			unsigned long long inter_arrival;
 			int prio;
 			bool valid;
+			char name[24];
 
 	};
 }

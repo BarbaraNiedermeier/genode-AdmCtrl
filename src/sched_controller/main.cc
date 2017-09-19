@@ -33,10 +33,9 @@ namespace Sched_controller {
 				PINF("sched_controller is initialized");
 			}
 
-			void new_task(Rq_task::Rq_task task)
+			int new_task(Rq_task::Rq_task task, int core)
 			{
-				PINF("Received new task with id: %d", task.task_id);
-				_ctr->allocate_task(task);
+				return _ctr->enq(core, task);
 			}
 
 			void set_sync_ds(Genode::Dataspace_capability ds_cap)
@@ -46,8 +45,14 @@ namespace Sched_controller {
 
 			int are_you_ready()
 			{
-				_ctr->are_you_ready();	
+				return _ctr->are_you_ready();
 			}
+
+			int update_rq_buffer(int core)
+			{
+				return _ctr->update_rq_buffer(core);
+			}
+
 
 			/* Session_component constructor enhanced by Sched_controller object */
 			Session_component(Sched_controller *ctr)
@@ -94,6 +99,7 @@ int main(void)
 {
 
 	Sched_controller::Sched_controller ctr;
+	ctr.init_ds(32,2);
 
 	Cap_connection cap;
 
@@ -105,7 +111,6 @@ int main(void)
 
 	static Sched_controller::Root_component sched_controller_root(&ep, &sliced_heap, &ctr);
 	env()->parent()->announce(ep.manage(&sched_controller_root));
-
 
 	sleep_forever();
 
