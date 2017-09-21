@@ -72,7 +72,7 @@ namespace Sched_controller {
 			{
 				_ctr->get_optimizer()->last_job_started(task_name);
 			}
-			bool change_core(std::string task_name, int core)
+			bool change_core(std::string task_name, unsigned int core)
 			{
 				return _ctr->get_optimizer()->change_core(task_name, core);
 			}

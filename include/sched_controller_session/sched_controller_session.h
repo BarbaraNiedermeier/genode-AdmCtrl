@@ -29,7 +29,7 @@ namespace Sched_controller {
 		virtual void set_opt_goal (Genode::Ram_dataspace_capability) = 0;
 		virtual bool scheduling_allowed(std::string) = 0;
 		virtual void last_job_started(std::string) = 0;
-		virtual bool change_core(std::string, int) = 0;
+		virtual bool change_core(std::string, unsigned int) = 0;
 
 		GENODE_RPC(Rpc_get_init_status, void, get_init_status);
 		GENODE_RPC(Rpc_new_task, int, new_task, Rq_task::Rq_task, int);
@@ -40,7 +40,7 @@ namespace Sched_controller {
 		GENODE_RPC(Rpc_set_opt_goal, void, set_opt_goal, Genode::Ram_dataspace_capability);
 		GENODE_RPC(Rpc_scheduling_allowed, bool, scheduling_allowed, std::string);
 		GENODE_RPC(Rpc_last_job_started, void, last_job_started, std::string);
-		GENODE_RPC(Rpc_change_core, bool, change_core, std::string, int);
+		GENODE_RPC(Rpc_change_core, bool, change_core, std::string, unsigned int);
 		
 		
 		GENODE_RPC_INTERFACE(Rpc_get_init_status, Rpc_new_task, Rpc_set_sync_ds, Rpc_are_you_ready, Rpc_update_rq_buffer, Rpc_optimize, Rpc_set_opt_goal, Rpc_scheduling_allowed, Rpc_last_job_started, Rpc_change_core);

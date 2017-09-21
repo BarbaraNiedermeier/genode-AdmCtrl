@@ -81,14 +81,11 @@ namespace Sched_controller {
 				}
 			}
 			int success = _rqs[core].enq(task);
-			return success;
 
 			// do task optimization for lo tasks
 			if (task.task_class == Rq_task::Task_class::lo)
 			{
-				int success = _optimizer->add_task(core, task);
-				//int success = _rqs[core].enq(task);
-				return success;
+				_optimizer->add_task((unsigned int) core, task);
 			}
 		}
 		

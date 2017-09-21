@@ -83,7 +83,7 @@ namespace Sched_controller {
 	}
 	
 	
-	int Sched_opt::add_task(int core, Rq_task::Rq_task task)
+	void Sched_opt::add_task(unsigned int core, Rq_task::Rq_task task)
 	{
 		PDBG("Optimizer - Add task %s to task list.", std::string(task.name).c_str());
 		
@@ -97,6 +97,7 @@ namespace Sched_controller {
 		_task.arrival_time = 0;
 		_task.to_schedule = true;
 		_task.last_job_started = false;
+		_task.id_related = 0;
 		
 		_task.newest_job.foc_id = 0;
 		_task.newest_job.arrival_time = 0;
@@ -177,7 +178,7 @@ namespace Sched_controller {
 		
 	}
 	
-	bool Sched_opt::change_core(std::string task_name, int core)
+	bool Sched_opt::change_core(std::string task_name, unsigned int core)
 	{
 		// This function handles the situation, when a task has changed its core.
 		// It referes to the following global variables:
@@ -309,7 +310,7 @@ namespace Sched_controller {
 				// matching task found -> check if this thread is a new job
 				if(_threads[j].arrival_time >= _tasks.at(task_str).arrival_time)
 				{
-					PINF("Optimizer: Another new job with name %s", _threads[j].thread_name.string());
+					PINF("Optimizer: A job of task %s has been detected at monitoring list.", _threads[j].thread_name.string());
 					new_threads_nr.push_back(j);
 				}
 			}
@@ -323,6 +324,9 @@ namespace Sched_controller {
 				{
 					PINF("Optimizer: Task %s has a new job with foc_id %d.", _threads[j].thread_name.string(), _threads[j].foc_id);
 					it->second.newest_job.foc_id = _threads[j].foc_id;
+					
+					// toDo: convert Genode::Affinity::Location to core number (int)
+					//it->second.newest_job.core = _threas[j].affinity.core();
 					it->second.newest_job.dispatched = false;
 				}
 			}
@@ -366,7 +370,7 @@ namespace Sched_controller {
 			case 0:
 			{
 				// there are no new tasks => job_executed remains false
-				PINF("Optimizer: No new job for task %s", task_str.c_str());
+				PINF("Optimizer: No new job for task %s was found at monitoring list.", task_str.c_str());
 				break;
 			}
 			case 1:
@@ -376,7 +380,7 @@ namespace Sched_controller {
 				
 				bool deadline_time_reached = (current_time >= _threads[new_threads_nr[0]].arrival_time + _tasks.at(task_str).deadline);
 				
-				if (deadline_time_reached) // the job should have been executed
+				if (deadline_time_reached) // the job has no time left to be executed
 				{
 					// toDo: Bei deadline miss ist task evtl. nicht mehr in monitoring list
 					// determine if the job had a deadline miss or correct execution and set the to_schedules values
@@ -485,7 +489,19 @@ namespace Sched_controller {
 		// It referes to the following global variables:
 		//	_tasks -> value, deadline, competitor (name), core
 		//	_threads -> arrival_time, exit_time
-	
+		
+		
+		
+		// check if job was executed on the expected core
+		// toDo: convert affinity to core number (int)
+		/*
+		int _core = (int) _threads[thread_nr].affinity;
+		if (_tasks.at(task_str).core != thread_core)
+		{
+			PWRN("Optimizer (_task_executed): The task %s has changed its core from core-%d to core-%d.", task_str.c_str(), _tasks.at(task_str).core, thread_core);
+			_tasks.at(task_str).core = thread_core;
+		}
+		*/
 		unsigned int core = _tasks.at(task_str).core;
 		
 		
@@ -501,7 +517,8 @@ namespace Sched_controller {
 		else
 		{
 			// job reached its deadline before finishing its execution (= deadline miss)
-			_job_reached_deadline(task_str);
+			// toDo: this call is related since the threads which reached their deadlines ar not in monitoring threads any more
+			_deadline_reached(task_str);
 		}
 		
 		// calculate the utilization
@@ -576,7 +593,7 @@ namespace Sched_controller {
 					//	or the deadline of the other task is in between the deadline of this task and the actual start time of next thread of this task
 					PWRN("Optimizer (_task_not_executed): The newest_job was not detected correcly.");
 				
-					// thus the matching of foc_id and task won't worke for rip list
+					// thus the matching of foc_id and task wouldn't work for rip list
 				}
 				else
 				{
@@ -601,8 +618,16 @@ namespace Sched_controller {
 							//check if deadline was reached
 							if(rip[2*i] >= _tasks.at(task_str).newest_job.arrival_time + _tasks.at(task_str).deadline)
 							{
+								
+								// check for core change
+								if(_tasks.at(task_str).core != _tasks.at(task_str).newest_job.core)
+								{
+									PWRN("Optimizer (_task_not_executed): The task %s has changed its core from core-%d to core-%d.", task_str.c_str(), _tasks.at(task_str).core, _tasks.at(task_str).newest_job.core);
+									_tasks.at(task_str).core = _tasks.at(task_str).newest_job.core;
+								}
+								
 								// the thread has reached its deadline
-								_job_reached_deadline(task_str);
+								_deadline_reached(task_str);
 							}
 							else // the task was killed by the user
 							{
@@ -733,15 +758,8 @@ namespace Sched_controller {
 		
 	}
 	
-	void Sched_opt::_job_reached_deadline(std::string task_str)
+	void Sched_opt::_deadline_reached(std::string task_str)
 	{
-	
-		unsigned int core = _tasks.at(task_str).core;
-		
-		// increase value and indicate an overload at this core
-		_tasks.at(task_str).value[core] ++;
-		_tasks.at(task_str).overload[core] = true;
-		
 		// find causation task
 		std::string cause_task_str = _get_cause_task(task_str);
 		if(cause_task_str.empty())
@@ -770,8 +788,164 @@ namespace Sched_controller {
 				// add causation task to competitor list
 				_tasks.at(task_str).competitor.emplace_back(cause_task_str);
 			}
+			
+			
+			// update list of related tasks
+			if (_tasks.at(task_str).id_related <= 0)
+			{
+				// the task has no related tasks
+				// check if the cause task is in a list of _related_tasks
+				if(_tasks.at(cause_task_str).id_related > 0)
+				{
+					// Report error situation to the console
+					if (cause_already_at_competitors || (!cause_already_at_competitors && _tasks.at(task_str).competitor.size() > 1))
+						PWRN("Optimizer: The task %s had already had some competitors but no related_id.", task_str.c_str());
+					
+					
+					// add this task to the list of the causation task
+					_related_tasks.at(_tasks.at(cause_task_str).id_related).tasks.emplace(task_str);
+					_tasks.at(task_str).id_related = _tasks.at(cause_task_str).id_related;
+				}
+				else // neither the considered nor its causation task are in a list of _related_tasks
+				{
+					// create new list
+					Related_tasks list_related;
+					list_related.max_value = 0; // this will be updated later
+					
+					// since lists can be removed (e.g. by merging two lists), the id can be bigger than _related_tasks.size()
+					// determine max_id
+					unsigned int max_id = 0;
+					for(auto& it: _related_tasks)
+					{
+						if(it.first > max_id)
+							max_id = it.first;
+					}
+					unsigned int list_id = max_id + 1; // the list id has to be > 1
+					
+					
+					_related_tasks.insert({list_id, list_related});
+					
+					// add this task to the list
+					_related_tasks.at(list_id).tasks.emplace(task_str);
+					_tasks.at(task_str).id_related = list_id;
+					
+					// add competitor to the list
+					_related_tasks.at(list_id).tasks.emplace(cause_task_str);
+					_tasks.at(cause_task_str).id_related = list_id;
+					
+					PINF("Optimizer (_deadline_reached): Create new list of _related_tasks (id: %d) for task %s and its competitor %s.", list_id, task_str.c_str(), cause_task_str.c_str());
+				}
+			}
+			else
+			{
+				// the task already has a list of _related_tasks
+				
+				// check if the causation task is already in the same list as the considered task
+				if(_tasks.at(cause_task_str).id_related != _tasks.at(task_str).id_related)
+				{
+					// check if the causation task has a list
+					if(_tasks.at(cause_task_str).id_related == 0)
+					{
+						// the causation task has no own list
+						if(_tasks.at(cause_task_str).competitor.size() > 0)
+							PWRN("Optimizer: Optimizer: The task %s had already had some competitors but no related_id.", cause_task_str.c_str());
+						
+						
+						// add competing task to the list of the considered task
+						_related_tasks.at(_tasks.at(task_str).id_related).tasks.emplace(cause_task_str);
+						_tasks.at(cause_task_str).id_related = _tasks.at(task_str).id_related;
+					}
+					else
+					{
+						// the causation tas has its own list -> merge both lists
+						unsigned int old_id, new_id;
+						
+						// check which list is smaller
+						if(_related_tasks.at(_tasks.at(task_str).id_related).tasks.size() >= _related_tasks.at(_tasks.at(cause_task_str).id_related).tasks.size())
+						{
+							new_id = _tasks.at(task_str).id_related;
+							old_id = _tasks.at(cause_task_str).id_related;
+						}
+						else
+						{
+							new_id = _tasks.at(cause_task_str).id_related;
+							old_id = _tasks.at(task_str).id_related;
+						}
+						
+						// insert tasks from old list into the new list
+						_related_tasks.at(new_id).tasks.insert(_related_tasks.at(old_id).tasks.begin(), _related_tasks.at(old_id).tasks.end());
+						
+						// re-use biggest max_value
+						if(_related_tasks.at(old_id).max_value > _related_tasks.at(new_id).max_value)
+						{
+							_related_tasks.at(new_id).max_value = _related_tasks.at(old_id).max_value;
+						}
+						
+						// change id pointer of tasks from the id of the old list to the id of the new list
+						for(const std::string& task: _related_tasks.at(old_id).tasks)
+						{
+							_tasks.at(task).id_related = new_id;
+						}
+						
+						// remove tasks from old list
+						_related_tasks.at(old_id).tasks.erase(_related_tasks.at(old_id).tasks.begin(), _related_tasks.at(old_id).tasks.end());
+						
+						// remove old list from _related_tasks
+						_related_tasks.erase(old_id);
+					}
+				}
+				// else: no task has to be further added to any list
+			}
+			
+			
+			// update max_value (only if the new value is bigger than the old value)
+			if((_tasks.at(task_str).competitor.size() + 1) > _related_tasks.at(_tasks.at(task_str).id_related).max_value )
+			{
+				_related_tasks.at(_tasks.at(task_str).id_related).max_value = _tasks.at(task_str).competitor.size() + 1;
+			}
+		}
+		
+		
+		unsigned int core = _tasks.at(task_str).core;
+		
+		//indicate an overload at this core
+		_tasks.at(task_str).overload[core] = true;
+		
+		// increase value and check max_value
+		_tasks.at(task_str).value[core] ++;
+		if(_tasks.at(task_str).id_related <= 0)
+			PWRN("Optimizer: The task %s has no id_related althought it should have been updated priorly.", task_str.c_str());
+		else if(_tasks.at(task_str).value[core] >= _related_tasks.at(_tasks.at(task_str).id_related).max_value)
+		{
+			// check if all tasks at the list have reached the max_value
+			bool reduce_values = true;
+			unsigned int list_id = _tasks.at(task_str).id_related;
+			for(const std::string& task: _related_tasks.at(list_id).tasks)
+			{
+				// only consider related tasks, which are currently working on the same core (core of the considered task)
+				if ((_tasks.at(task).core == core) && (_tasks.at(task).value[core] < _related_tasks.at(list_id).max_value))
+				{
+					reduce_values = false;
+					break;
+				}
+			}
+			
+			if(reduce_values)
+			{
+				for(const std::string& task: _related_tasks.at(list_id).tasks)
+				{
+					// also consider related tasks, which are not currently working on the same core (core of the considered task)
+					// Reason: Avoid a task waiting to reduce its value due to a other task which cannot update its value of this core since it isn't executed there
+					if(_tasks.at(task).value[core] >= _related_tasks.at(list_id).max_value)
+						_tasks.at(task).value[core] -= _related_tasks.at(list_id).max_value;
+					else
+						_tasks.at(task).value[core] = 0;
+				}
+			}
+			
 		}
 	}
+	
 	std::string Sched_opt::_get_cause_task(std::string task_str)
 	{
 		// This function queries the monitoring objects (threads) to find the thread which caused the deadline miss for the task
@@ -820,15 +994,12 @@ namespace Sched_controller {
 		
 		// return thread name, if cause thread was found in monitoring list
 		if((cause_thread_nr >= 0) && (_tasks.count(_threads[cause_thread_nr].thread_name.string()) > 0))
-		{
 			return _threads[cause_thread_nr].thread_name.string();
-		}
-		else
-		{
-			// maybe a task, which reached its deadline caused this deadline miss
-			// toDo: check rip list for task which exit_time is in desired interval
-			return std::string();
-		}
+		
+		// else
+		// maybe a task, which reached its deadline caused this deadline miss
+		// toDo: check rip list for cause task which exit_time is in desired interval
+		return std::string();
 	}
 	
 	void Sched_opt::run_job()
