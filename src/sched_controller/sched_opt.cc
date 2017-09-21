@@ -1073,13 +1073,13 @@ namespace Sched_controller {
 		// check if task belonging to this thread was killed/has finished
 		for(auto& task: _ended_tasks)
 		{
-			if(task.second.last_foc_id == rip[i+1])
+			if(task.second.last_foc_id == job_foc_id)
 			{
 				PWRN("Optimizer(_get_cause_task): The task, which job was executed shortly before the job of task %s is already dead/finished.", task_str.c_str());
 				return std::string();
 			}
 		}
-		PWRN("Optimizer(_get_cause_task): Foc_id (%d) of job which was executed shortly before the job of task %s cannot be mapped to a task.", job_foc_id, task_str.c_str());
+		PWRN("Optimizer(_get_cause_task): Foc_id (%llu) of job which was executed shortly before the job of task %s cannot be mapped to a task.", job_foc_id, task_str.c_str());
 		return std::string();
 	}
 	
