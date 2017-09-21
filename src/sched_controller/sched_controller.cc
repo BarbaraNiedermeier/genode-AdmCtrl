@@ -85,7 +85,7 @@ namespace Sched_controller {
 			// do task optimization for lo tasks
 			if (task.task_class == Rq_task::Task_class::lo)
 			{
-				_optimizer->add_task(core, task);
+				_optimizer->add_task((unsigned int) core, task);
 			}
 			return success;
 		}

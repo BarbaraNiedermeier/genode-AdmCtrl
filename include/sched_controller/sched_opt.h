@@ -17,6 +17,7 @@
 #include "mon_manager/mon_manager.h"
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Sched_controller {
 
@@ -30,6 +31,7 @@ namespace Sched_controller {
 		KILLED, // task was killed by user (hard exit)
 		FINISHED // task finished its last job (soft exit)
 	};
+	// this struct is used to represent the tasks which are no Optimization_tasks any more (finished execution <-> killed)
 	struct Ended_task
 	{
 		std::string		name;
@@ -37,15 +39,29 @@ namespace Sched_controller {
 		Cause_of_death		cause_of_death;
 	};
 	
-	// this struct is used to determine the task corresponding to the job at the rip list
+	// this struct is used to determine the job corresponding to the thread at the rip list
 	struct Newest_job
 	{
 		unsigned int		foc_id;
 		unsigned long long 	arrival_time;
+		unsigned int		core;
 		bool			dispatched;
 		
 	};
 
+	//class Related_tasks
+	struct Related_tasks
+	{
+		//public:
+			unsigned int		max_value;
+			std::unordered_set<std::string> tasks;
+			
+		/*
+			Related_tasks();
+		*/
+		
+	};
+	
 	struct Optimization_task
 	{
 		// static task attributes
@@ -55,11 +71,12 @@ namespace Sched_controller {
 		unsigned long long	deadline;
 		
 		// dynamic task attributes
-		int			core;
+		unsigned int		core;
 		unsigned long long 	arrival_time; // this is the jobs earliest possible start time
 		bool			to_schedule;
 		bool			last_job_started; // used to indicate thelast execution of a job belonging to this task
 		std::vector<std::string> competitor;
+		unsigned int 		id_related;
 		Newest_job		newest_job;// used for rip list
 		bool* 			overload; // use this later to change cores depending on the overload on each core
 		
@@ -88,6 +105,7 @@ namespace Sched_controller {
 			Optimization_goal _opt_goal;
 			std::unordered_map<std::string, Optimization_task> _tasks;
 			std::unordered_map<std::string, Ended_task> _ended_tasks;
+			std::unordered_map<unsigned int, Related_tasks> _related_tasks;
 			
 			int num_cores;
 			bool* overload_at_core;
@@ -104,7 +122,7 @@ namespace Sched_controller {
 			
 			void _task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(std::string task_str);
-			void _job_reached_deadline(std::string task_str);
+			void _deadline_reached(std::string task_str);
 			std::string _get_cause_task(std::string task_str);
 			
 			void _remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause);
@@ -120,12 +138,12 @@ namespace Sched_controller {
 			void set_goal(Genode::Ram_dataspace_capability);
 			void start_optimizing();
 			
-			void add_task(int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
+			void add_task(unsigned int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
 			
 			// these functions are called by the taskloader
 			bool scheduling_allowed(std::string task_name);
 			void last_job_started(std::string task_name);
-			bool change_core(std::string task_name, int core);
+			bool change_core(std::string task_name, unsigned int core);
 			
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
