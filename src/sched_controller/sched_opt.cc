@@ -605,10 +605,10 @@ namespace Sched_controller {
 		
 					// rip is a 'list of tuples (foc_id, time)' similar to RQ list of Monitor
 					// RIP table size is shown in rip[0]
-					for (unsigned int i=1; i<rip[0]; ++i)
+					for (unsigned int i=1; i<rip[0]*2+1; i+=2)
 					{
-						// foc_id is rip[2*i-1], time is rip[2*i]/1000
-						if(_tasks.at(task_str).newest_job.foc_id == rip[2*i-1])
+						// foc_id is rip[i], time is rip[i+1]/1000
+						if(_tasks.at(task_str).newest_job.foc_id == rip[i])
 						{
 							// the task was found in rip list
 							task_in_rip = true;
@@ -616,7 +616,7 @@ namespace Sched_controller {
 							// check if this task was killed by user <-> job reached its deadline
 				
 							//check if deadline was reached
-							if(rip[2*i] >= _tasks.at(task_str).newest_job.arrival_time + _tasks.at(task_str).deadline)
+							if(rip[i+1] >= _tasks.at(task_str).newest_job.arrival_time + _tasks.at(task_str).deadline)
 							{
 								
 								// check for core change
@@ -632,7 +632,7 @@ namespace Sched_controller {
 							else // the task was killed by the user
 							{
 								// remove it from the _tasks list
-								_remove_task(task_str, rip[2*i-1], KILLED);
+								_remove_task(task_str, rip[i], KILLED);
 							}
 						}
 					}
@@ -996,9 +996,53 @@ namespace Sched_controller {
 		if((cause_thread_nr >= 0) && (_tasks.count(_threads[cause_thread_nr].thread_name.string()) > 0))
 			return _threads[cause_thread_nr].thread_name.string();
 		
-		// else
-		// maybe a task, which reached its deadline caused this deadline miss
-		// toDo: check rip list for cause task which exit_time is in desired interval
+		// else : maybe cause task also reached its deadline before the job of the considered task
+		// check rip list for cause task whith exit_time in desired interval
+		long long unsigned job_foc_id;
+		long long unsigned latest_rip_time = 0;
+	
+		// fill rip list with data
+		_mon_manager->update_dead(_dead_ds_cap);
+
+		// query rip list
+		for (unsigned int i=1; i<rip[0]*2+1; i+=2)
+		{
+			//check if thread had rip-time in interval
+			if((rip[i+1] >= thread_start) && (rip[i+1] <= thread_deadline))
+			{
+				
+				// consider latest job at interval
+				if(rip[i+1] > latest_rip_time)
+				{
+					// this job might be the causing job
+					job_foc_id = rip[i];
+					latest_rip_time = rip[i+1];
+				}
+			}
+		}
+	
+		if(latest_rip_time <= 0)
+		{
+			// No Thread in considered time interval was found in rip list
+			PWRN("Optimizer(_get_cause_task): No task which job was executed shortly before the job of task %s (no thread in monitoring or rip list at the desired time interval).", task_str.c_str());
+			return std::string();
+		}
+		//else: Find task belonging to this thread
+		for (auto& task: _tasks)
+		{
+			if(task.second.newest_job.foc_id == job_foc_id)
+				return task.first;
+		}
+		// check if task belonging to this thread was killed/has finished
+		for(auto& task: _ended_tasks)
+		{
+			if(task.second.last_foc_id == rip[i+1])
+			{
+				PWRN("Optimizer(_get_cause_task): The task, which job was executed shortly before the job of task %s is already dead/finished.", task_str.c_str());
+				return std::string();
+			}
+		}
+		PWRN("Optimizer(_get_cause_task): Foc_id (%d) of job which was executed shortly before the job of task %s cannot be mapped to a task.", job_foc_id, task_str.c_str());
 		return std::string();
 	}
 	
