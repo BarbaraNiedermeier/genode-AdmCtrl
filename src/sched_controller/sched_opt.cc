@@ -295,7 +295,7 @@ namespace Sched_controller {
 					PINF("Optimizer: Task %s has a new job with foc_id %d.", _threads[j].thread_name.string(), _threads[j].foc_id);
 					it->second.newest_job.foc_id = _threads[j].foc_id;
 					
-					it->second.newest_job.core = _threas[j].affinity.xpos();
+					it->second.newest_job.core = _threads[j].affinity.xpos();
 					it->second.newest_job.dispatched = false;
 				}
 			}
@@ -482,7 +482,7 @@ namespace Sched_controller {
 		// calculate the utilization
 		if(_threads[thread_nr].exit_time > 0)
 		{
-			double new_util = _threads[thread_nr].execution_time / _tasks.at(task_str).inter_arrival;
+			double new_util = _threads[thread_nr].execution_time.value / _tasks.at(task_str).inter_arrival;
 			_tasks.at(task_str).utilization = new_util;
 		}
 		
