@@ -455,7 +455,7 @@ namespace Sched_controller {
 		
 		
 		// check if job was executed on the expected core
-		int thread_core = (int) _threads[thread_nr].affinity.xpos();
+		unsigned int thread_core = _threads[thread_nr].affinity.xpos();
 		if (_tasks.at(task_str).core != thread_core)
 		{
 			PWRN("Optimizer (_task_executed): The task %s has changed its core from core-%d to core-%d.", task_str.c_str(), _tasks.at(task_str).core, thread_core);

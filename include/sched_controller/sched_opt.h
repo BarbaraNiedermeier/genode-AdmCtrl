@@ -52,14 +52,8 @@ namespace Sched_controller {
 	//class Related_tasks
 	struct Related_tasks
 	{
-		//public:
-			unsigned int		max_value;
-			std::unordered_set<std::string> tasks;
-			
-		/*
-			Related_tasks();
-		*/
-		
+		unsigned int		max_value;
+		std::unordered_set<std::string> tasks;
 	};
 	
 	struct Optimization_task
