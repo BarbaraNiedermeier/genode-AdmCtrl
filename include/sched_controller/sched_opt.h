@@ -141,8 +141,8 @@ namespace Sched_controller {
 			void add_task(unsigned int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
 			
 			// these functions are called by the taskloader
-			bool scheduling_allowed(std::string task_name);
-			void last_job_started(std::string task_name);
+			bool scheduling_allowed(const char* task_name);
+			void last_job_started(const char* task_name);
 			
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);

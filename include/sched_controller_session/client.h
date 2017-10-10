@@ -60,12 +60,12 @@ namespace Sched_controller {
 		}
 		
 		
-		bool scheduling_allowed (std::string task_name)
+		bool scheduling_allowed (const char* task_name)
 		{
 			PDBG("Calling Rpc-Interface function to query scheduling permission.");
 			return call<Rpc_scheduling_allowed>(task_name);
 		}
-		void last_job_started (std::string task_name)
+		void last_job_started (const char* task_name)
 		{
 			PDBG("Calling Rpc-Interface function to inform optimizer about the start of the last job.");
 			call<Rpc_last_job_started>(task_name);

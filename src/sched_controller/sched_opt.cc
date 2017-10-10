@@ -119,19 +119,19 @@ namespace Sched_controller {
 		
 	}
 	
-	void Sched_opt::last_job_started(std::string task_name)
+	void Sched_opt::last_job_started(const char* task_name)
 	{
 		// This function is called by the taskloader as soon as the last job was started for this task.
 		
-		if(_tasks.count(task_name))
+		if(_tasks.count(std::string(task_name)))
 		{
 			// the task was found in task list
-			_tasks.at(task_name).last_job_started = true;
+			_tasks.at(std::string(task_name)).last_job_started = true;
 		}
 		else
 		{
 			// the task was not found in task list
-			PWRN("Optimizer (last_job_started): The requested task %s was not in task list any more.", task_name.c_str());
+			PWRN("Optimizer (last_job_started): The requested task %s was not in task list any more.", task_name);
 		}
 	}
 	
@@ -177,7 +177,7 @@ namespace Sched_controller {
 	}
 	
 	
-	bool Sched_opt::scheduling_allowed(std::string task_name)
+	bool Sched_opt::scheduling_allowed(const char* task_name)
 	{
 		// This function looks up the to_schedule value of the requested task.
 		// It should be called by Taskloader before starting a task (some where in _session_component::start()).
@@ -187,25 +187,25 @@ namespace Sched_controller {
 		
 		
 		// look in _tasks for requested task
-		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(task_name);
+		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(std::string(task_name));
 		if(it != _tasks.end())
 		{
-			PINF("Optimizer: Query scheduling allowance for task %s: %d", task_name.c_str(), it->second.to_schedule);
+			PINF("Optimizer: Query scheduling allowance for task %s: %d", task_name, it->second.to_schedule);
 			return it->second.to_schedule;
 		}
 		
 		// look in _ended_tasks for requested task
-		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(task_name);
+		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(std::string(task_name));
 		if(it_end != _ended_tasks.end())
 		{
 			
 			// the requested task is in list of ended tasks
 			std::string reason = (it_end->second.cause_of_death == FINISHED)? "the task has finished its last job" : "the task was killed";
-			PINF("Optimizer: Requested task for scheduling allowance (%s) already ended (cause: %s).", task_name.c_str(), reason.c_str());
+			PINF("Optimizer: Requested task for scheduling allowance (%s) already ended (cause: %s).", task_name, reason.c_str());
 			return false;
 			
 		}
-		PINF("Optimizer: Requested task for scheduling allowance (%s) was not found in task lisk of actual or ended tasks.", task_name.c_str());
+		PINF("Optimizer: Requested task for scheduling allowance (%s) was not found in task lisk of actual or ended tasks.", task_name);
 		return false;
 	}
 	
