@@ -70,11 +70,6 @@ namespace Sched_controller {
 			PDBG("Calling Rpc-Interface function to inform optimizer about the start of the last job.");
 			call<Rpc_last_job_started>(task_name);
 		}
-		bool change_core (std::string task_name, unsigned int core)
-		{
-			PDBG("Calling Rpc-Interface function inform the optimizer about a core change of a task.");
-			return call<Rpc_change_core>(task_name, core);
-		}
 
 	};
 }

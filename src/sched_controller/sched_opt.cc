@@ -176,35 +176,6 @@ namespace Sched_controller {
 		
 	}
 	
-	bool Sched_opt::change_core(std::string task_name, unsigned int core)
-	{
-		// This function handles the situation, when a task has changed its core.
-		// It referes to the following global variables:
-		//	_tasks -> name, deadline
-		
-		
-		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(task_name);
-		if(it != _tasks.end())
-		{
-			PINF("Optimizer: Change core of task %s from %d to %d.", task_name.c_str(), it->second.core, core);
-			it->second.core = core;
-			return true;
-		}
-		// look in _ended_tasks for requested task
-		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(task_name);
-		if(it_end != _ended_tasks.end())
-		{
-			
-			// the requested task is in list of ended tasks
-			std::string reason = (it_end->second.cause_of_death == FINISHED)? "the task has finished its last job" : "the task was killed";
-			PINF("Optimizer: Requested task for changing core (%s) already ended (cause: %s).", task_name.c_str(), reason.c_str());
-			return false;
-			
-		}
-		PINF("Optimizer: Requested task for changing core (%s) was not found in task lisk of actual or ended tasks.", task_name.c_str());
-		return false;
-	}
-	
 	
 	bool Sched_opt::scheduling_allowed(std::string task_name)
 	{

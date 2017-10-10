@@ -143,7 +143,6 @@ namespace Sched_controller {
 			// these functions are called by the taskloader
 			bool scheduling_allowed(std::string task_name);
 			void last_job_started(std::string task_name);
-			bool change_core(std::string task_name, unsigned int core);
 			
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);
