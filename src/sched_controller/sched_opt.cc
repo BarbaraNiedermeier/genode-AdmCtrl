@@ -31,7 +31,7 @@ namespace Sched_controller {
 
 		const auto fn = [this] (const Genode::Xml_node& node)
 		{
-			int max_len = 32;
+			int max_len = sizeof(int);
 			std::vector<char> fair_goal(max_len);
 			std::vector<char> util_goal(max_len);
 			
@@ -104,8 +104,7 @@ namespace Sched_controller {
 		_task.newest_job.dispatched = true;
 		
 		// used to do utilization optimisation
-		_task.utilization = 0;
-		_task.execution_time = 0;
+		_task.utilization = 1;
 		
 		// for all cores the value is initially 0
 		for (int i=0; i < num_cores; ++i)
@@ -137,6 +136,8 @@ namespace Sched_controller {
 	
 	void Sched_opt::_remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause)
 	{
+		// toDo: update related_tasks
+		
 		// remove task from _tasks list
 		_tasks.erase(task_str);
 		
@@ -216,7 +217,7 @@ namespace Sched_controller {
 		PDBG("Optimizer: ------------------------------- start optimizing.");
 		
 		/*
-		while (_opt_goal != NONE)
+		while (true)
 		{
 			unsigned long long current_time = timer.elapsed_ms();
 		
@@ -294,8 +295,7 @@ namespace Sched_controller {
 					PINF("Optimizer: Task %s has a new job with foc_id %d.", _threads[j].thread_name.string(), _threads[j].foc_id);
 					it->second.newest_job.foc_id = _threads[j].foc_id;
 					
-					// toDo: convert Genode::Affinity::Location to core number (int)
-					//it->second.newest_job.core = _threas[j].affinity.core();
+					it->second.newest_job.core = _threas[j].affinity.xpos();
 					it->second.newest_job.dispatched = false;
 				}
 			}
@@ -354,9 +354,6 @@ namespace Sched_controller {
 					// toDo: Bei deadline miss ist task evtl. nicht mehr in monitoring list
 					// determine if the job had a deadline miss or correct execution and set the to_schedules values
 					_task_executed(task_str, new_threads_nr[0], true);
-					
-					// set the tasks execution time to the one of this job
-					_tasks.at(task_str).execution_time = _threads[new_threads_nr[0]].execution_time.value;
 				}
 				// else: the job has still some time left for execution 
 				
@@ -406,13 +403,6 @@ namespace Sched_controller {
 					bool consider_this_thread =( ((i == most_recent_thread) && recent_deadline_time_reached) || ((i == second_recent_thread) && !recent_deadline_time_reached) );
 					
 					_task_executed(task_str, i, consider_this_thread);
-					
-					if (consider_this_thread)
-					{
-						// set the tasks execution time to the one of this job
-						_tasks.at(task_str).execution_time = _threads[i].execution_time.value;
-						PINF("Optimizer: Set exec_time for task %s", task_str.c_str());
-					}
 				}
 				
 				// set arrival_time for next iteration
@@ -448,7 +438,10 @@ namespace Sched_controller {
 		
 		_tasks.at(task_str).arrival_time = _threads[thread_nr].arrival_time;
 		if (deadline_time_reached)
+		{
 			_tasks.at(task_str).arrival_time += _tasks.at(task_str).inter_arrival;
+		}
+		// toDo: update newest_job -> _set_newest_job(...)
 	}
 	
 	void Sched_opt::_task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules)
@@ -462,15 +455,12 @@ namespace Sched_controller {
 		
 		
 		// check if job was executed on the expected core
-		// toDo: convert affinity to core number (int)
-		/*
-		int _core = (int) _threads[thread_nr].affinity;
+		int thread_core = (int) _threads[thread_nr].affinity.xpos();
 		if (_tasks.at(task_str).core != thread_core)
 		{
 			PWRN("Optimizer (_task_executed): The task %s has changed its core from core-%d to core-%d.", task_str.c_str(), _tasks.at(task_str).core, thread_core);
 			_tasks.at(task_str).core = thread_core;
 		}
-		*/
 		unsigned int core = _tasks.at(task_str).core;
 		
 		
@@ -486,15 +476,13 @@ namespace Sched_controller {
 		else
 		{
 			// job reached its deadline before finishing its execution (= deadline miss)
-			// toDo: this call is related since the threads which reached their deadlines ar not in monitoring threads any more
 			_deadline_reached(task_str);
 		}
 		
 		// calculate the utilization
 		if(_threads[thread_nr].exit_time > 0)
 		{
-			unsigned int exec_diff = _threads[thread_nr].exit_time - _tasks.at(task_str).execution_time;
-			double new_util = exec_diff / _tasks.at(task_str).inter_arrival;
+			double new_util = _threads[thread_nr].execution_time / _tasks.at(task_str).inter_arrival;
 			_tasks.at(task_str).utilization = new_util;
 		}
 		
@@ -507,7 +495,9 @@ namespace Sched_controller {
 			
 			// indicate that it was handled by the optimizer
 			if(_threads[thread_nr].foc_id == _tasks.at(task_str).newest_job.foc_id)
-				_tasks.at(task_str).newest_job.dispatched = true; 
+			{
+				_tasks.at(task_str).newest_job.dispatched = true;
+			}
 			else
 			{
 				if(_threads[thread_nr].arrival_time <= _tasks.at(task_str).newest_job.arrival_time)
@@ -597,6 +587,7 @@ namespace Sched_controller {
 								
 								// the thread has reached its deadline
 								_deadline_reached(task_str);
+								_tasks.at(task_str).newest_job.dispatched = true;
 							}
 							else // the task was killed by the user
 							{

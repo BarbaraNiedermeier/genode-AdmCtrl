@@ -81,12 +81,9 @@ namespace Sched_controller {
 		bool* 			overload; // use this later to change cores depending on the overload on each core
 		
 		
-		// attributes for fairness optimization
+		// attributes for optimization
 		unsigned int*		value; // value is needed for every core
-		
-		// attributes for utilization optimization
 		double			utilization;
-		unsigned int		execution_time;
 		
 		
 	};	
