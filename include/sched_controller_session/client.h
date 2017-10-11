@@ -59,18 +59,17 @@ namespace Sched_controller {
 			call<Rpc_set_opt_goal>(xml_ds_cap);
 		}
 		
-		
-		bool scheduling_allowed (const char* task_name)
+		bool scheduling_allowed (Genode::String<32> task_name)
 		{
 			PDBG("Calling Rpc-Interface function to query scheduling permission.");
 			return call<Rpc_scheduling_allowed>(task_name);
 		}
-		void last_job_started (const char* task_name)
+		
+		void last_job_started (Genode::String<32> task_name)
 		{
 			PDBG("Calling Rpc-Interface function to inform optimizer about the start of the last job.");
 			call<Rpc_last_job_started>(task_name);
 		}
-
 	};
 }
 

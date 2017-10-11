@@ -64,15 +64,16 @@ namespace Sched_controller {
 				_ctr->get_optimizer()->set_goal(xml_ds_cap);
 			}
 			
-			bool scheduling_allowed(const char* task_name)
+			bool scheduling_allowed(Genode::String<32> task_name)
 			{
-				return _ctr->get_optimizer()->scheduling_allowed(task_name);
+				return _ctr->get_optimizer()->scheduling_allowed(task_name.string());
 			}
-			void last_job_started(const char* task_name)
+			void last_job_started(Genode::String<32> task_name)
 			{
-				_ctr->get_optimizer()->last_job_started(task_name);
+				_ctr->get_optimizer()->last_job_started(task_name.string());
 			}
-
+			
+			
 			/* Session_component constructor enhanced by Sched_controller object */
 			Session_component(Sched_controller *ctr)
 			: Genode::Rpc_object<Session>()
