@@ -104,25 +104,24 @@ namespace Sched_controller {
 			Timer::Connection timer;
 			int query_intervall;
 			
-			
 			// Attributes needed for fairness optimization
 			int accept; // Acceptance niveau for fairness optimization
 			
 			
 			void _query_monitor(std::string task_str, unsigned long long current_time);
-			
 			void _task_executed(std::string task_str, unsigned int thread_nr, bool set_to_schedules);
 			void _task_not_executed(std::string task_str);
 			void _deadline_reached(std::string task_str);
-			std::string _get_cause_task(std::string task_str);
-			
 			void _remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause);
+			
+			// private setter
+			void _set_newest_job(std::string task_str, unsigned int thread_nr)
 			void _set_arrival_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
 			void _set_to_schedule(std::string task_str);
+			void _reset_values(std::string task_str);
 			
-			
-			// Function needed to determine task competitors
-			std::string _get_cause_task(std::string task_str, unsigned int thread_nr);
+			// private getter
+			std::string _get_cause_task(std::string task_str);
 			
 			
 		public:

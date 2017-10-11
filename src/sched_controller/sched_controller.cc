@@ -413,7 +413,7 @@ namespace Sched_controller {
 		_optimizer = new Sched_opt(_num_cores, &_mon_manager, threads, mon_ds_cap, dead_ds_cap);
 				
 		//loop forever
-		the_cycle();
+		//the_cycle();
 	}
 
 	Sched_controller::~Sched_controller()
