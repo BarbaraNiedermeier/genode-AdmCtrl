@@ -801,32 +801,30 @@ namespace Sched_controller {
 		// update _related_tasks
 		if(tasks_id_related > 0)
 		{
-		    _related_tasks.at(tasks_id_related).erase(task_str);
-		    
-		    // if this list now only contains one competitor, this list is not required any more
-		    if(_related_tasks.at(tasks_id_related).size <= 1)
-		    {
-		    	// update id of last task at this list and remove list
-			_tasks.at(*_related_tasks.at(tasks_id_related).begin()).id_realted = 0;
-			_related_tasks.erase(tasks_id_related);
-		    }
-		    else
-		    {
-		    	// at the related list are still some tasks left
-		    	// determine max_value, if the ended task was the one to which max_value referred
-			if ((_tasks.at(task_str).competitor.size()+1) >= _related_tasks.at(tasks_id_related).max_value)
+			
+			// remove task from its related list
+			_related_tasks.at(tasks_id_related).tasks.erase(task_str);
+			
+			// if this list now only contains one competitor, this list is not required any more
+			if(_related_tasks.at(tasks_id_related).tasks.size() <= 1)
 			{
-			    unsigned int new_max = 0;
-			    for(const std::string& task: _related_tasks.at(tasks_id_related))
-			    {
-				if (_tasks.at(task).competitor.size() > new_max)
-				{
-				    new_maxt = _tasks.at(task).competitor.size();
-				}
-			    }
-			    _related_tasks.at(tasks_id_related).max_value = new_max + 1;
+				// update id of last task at this list and remove list
+				std::string residual_task = *(_related_tasks.at(tasks_id_related).tasks.begin());
+				_tasks.at(residual_task).id_related = 0;
+				_related_tasks.erase(tasks_id_related);
 			}
-		    }
+			else if ((_tasks.at(task_str).competitor.size()+1) >= _related_tasks.at(tasks_id_related).max_value)
+			{
+				unsigned int new_max = 0;
+				for(const std::string& task: _related_tasks.at(tasks_id_related).tasks)
+				{
+					if (_tasks.at(task).competitor.size() > new_max)
+					{
+						new_max = _tasks.at(task).competitor.size();
+					}
+				}
+				_related_tasks.at(tasks_id_related).max_value = new_max + 1;
+			}
 		}
 		
 	}
@@ -843,9 +841,9 @@ namespace Sched_controller {
 	{
 		if(_threads[thread_nr].arrival_time > _tasks.at(task_str).newest_job.arrival_time)
 		{
-			PINF("Optimizer: Task %s has a new job with foc_id %d.", task_str.c_str(), _threads[j].foc_id);
-			_tasks.at(task_str).newest_job.foc_id = _threads[j].foc_id;
-			_tasks.at(task_str).newest_job.core = _threads[j].affinity.xpos();
+			PINF("Optimizer: Task %s has a new job with foc_id %d.", task_str.c_str(), _threads[thread_nr].foc_id);
+			_tasks.at(task_str).newest_job.foc_id = _threads[thread_nr].foc_id;
+			_tasks.at(task_str).newest_job.core = _threads[thread_nr].affinity.xpos();
 			_tasks.at(task_str).newest_job.dispatched = false;
 		}
 	}
@@ -1014,7 +1012,7 @@ namespace Sched_controller {
 		int cause_thread_nr = -1;
 		
 		// variables for thread at rip list
-		long long unsigned job_foc_id;
+		long long unsigned job_foc_id = 0;
 		long long unsigned latest_rip_time = 0;
 		
 		

@@ -85,24 +85,24 @@ namespace Sched_controller {
 	class Sched_opt {
 		
 		private:
-			Mon_manager::Connection *_mon_manager;
-			Mon_manager::Monitoring_object* _threads;
-			Genode::Dataspace_capability _mon_ds_cap;
+			Mon_manager::Connection*				_mon_manager;
+			Mon_manager::Monitoring_object*				_threads;
+			Genode::Dataspace_capability				_mon_ds_cap;
 			
 			// Attributes needed for analyzing rip list correctly
-			long long unsigned *rip;
-			Genode::Dataspace_capability _dead_ds_cap;
+			long long unsigned*					rip;
+			Genode::Dataspace_capability				_dead_ds_cap;
 			
-			Optimization_goal _opt_goal;
-			std::unordered_map<std::string, Optimization_task> _tasks;
-			std::unordered_map<std::string, Ended_task> _ended_tasks;
-			std::unordered_map<unsigned int, Related_tasks> _related_tasks;
+			Optimization_goal					_opt_goal;
+			std::unordered_map<std::string, Optimization_task>	_tasks;
+			std::unordered_map<std::string, Ended_task>		_ended_tasks;
+			std::unordered_map<unsigned int, Related_tasks>		_related_tasks;
 			
-			int num_cores;
-			bool* overload_at_core;
+			int							num_cores;
+			bool*							overload_at_core;
 			
-			Timer::Connection timer;
-			int query_intervall;
+			Timer::Connection					timer;
+			int							query_intervall;
 			
 			// Attributes needed for fairness optimization
 			int accept; // Acceptance niveau for fairness optimization
@@ -115,7 +115,7 @@ namespace Sched_controller {
 			void _remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause);
 			
 			// private setter
-			void _set_newest_job(std::string task_str, unsigned int thread_nr)
+			void _set_newest_job(std::string task_str, unsigned int thread_nr);
 			void _set_arrival_time(std::string task_str, unsigned int thread_nr, bool deadline_time_reached);
 			void _set_to_schedule(std::string task_str);
 			void _reset_values(std::string task_str);
