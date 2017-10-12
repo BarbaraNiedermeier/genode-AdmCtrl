@@ -72,7 +72,6 @@ namespace Sched_controller {
 		std::vector<std::string> competitor;
 		unsigned int 		id_related;
 		Newest_job		newest_job;// used for rip list
-		bool* 			overload; // use this later to change cores depending on the overload on each core
 		
 		
 		// attributes for optimization
@@ -104,8 +103,6 @@ namespace Sched_controller {
 			Timer::Connection					timer;
 			int							query_intervall;
 			
-			// Attributes needed for fairness optimization
-			int accept; // Acceptance niveau for fairness optimization
 			
 			
 			void _query_monitor(std::string task_str, unsigned long long current_time);
@@ -131,8 +128,8 @@ namespace Sched_controller {
 			void add_task(unsigned int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
 			
 			// these functions are called by the taskloader
-			bool scheduling_allowed(const char* task_name);
-			void last_job_started(const char* task_name);
+			int scheduling_allowed(std::string task_name);
+			void last_job_started(std::string task_name);
 			
 			
 			Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap);

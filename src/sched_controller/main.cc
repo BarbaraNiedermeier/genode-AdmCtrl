@@ -64,7 +64,7 @@ namespace Sched_controller {
 				_ctr->get_optimizer()->set_goal(xml_ds_cap);
 			}
 			
-			bool scheduling_allowed(Genode::String<32> task_name)
+			int scheduling_allowed(Genode::String<32> task_name)
 			{
 				return _ctr->get_optimizer()->scheduling_allowed(task_name.string());
 			}

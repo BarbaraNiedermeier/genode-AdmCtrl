@@ -71,23 +71,34 @@ namespace Sched_controller {
 		if (core < _num_cores)
 		{
 			task_map.insert({task.name, task});
-			//Execute sufficient schedulability test
-			if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
+			if(task.task_class == Rq_task::Task_class::hi)
 			{
-				//If sufficient test fails --> execute RTA (exact test)
-				if (!fp_alg.RTA(&task, &_rqs[core]))
+				//Execute sufficient schedulability test
+				if (!fp_alg.fp_sufficient_test(&task, &_rqs[core]))
 				{
-					return -1;
+					//If sufficient test fails --> execute RTA (exact test)
+					if (!fp_alg.RTA(&task, &_rqs[core]))
+					{
+						return -1;
+					}
 				}
 			}
-			int success = _rqs[core].enq(task);
-
-			// do task optimization for lo tasks
-			if (task.task_class == Rq_task::Task_class::lo)
+			else if (task.task_class == Rq_task::Task_class::lo)
 			{
+				// do task optimization for lo tasks
 				_optimizer->add_task((unsigned int) core, task);
 			}
+			else
+			{
+				PWRN("Sched_controller (enq): The task_class of task %s is neither hi nor lo. It is: %d", task.name, task.task_class);
+			}
+			int success = _rqs[core].enq(task);
+			
 			return success;
+		}
+		else
+		{
+			PWRN("Sched_controller (enq): At task %s, the core (%d) is larger or equal than the number of cores (%d)", task.name, core, _num_cores);
 		}
 		
 		return -1;

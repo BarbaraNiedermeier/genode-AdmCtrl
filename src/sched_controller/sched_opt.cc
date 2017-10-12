@@ -34,7 +34,6 @@ namespace Sched_controller {
 		// Definition of the optimization goal via xml file
 		Genode::Rm_session* rm = Genode::env()->rm_session();
 		const char* xml = rm->attach(xml_ds_cap);
-		PDBG("Optimizer - Start parsing XML file.");
 		Genode::Xml_node root(xml);
 
 		const auto fn = [this] (const Genode::Xml_node& node)
@@ -47,53 +46,47 @@ namespace Sched_controller {
 			node.sub_node("fairness").sub_node("apply").value(fair_goal.data(), fair_goal.size());
 			node.sub_node("utilization").sub_node("apply").value(util_goal.data(), util_goal.size());
 			
-			
-			
 			// analyze xml node value and set _opt_goal
 			if (std::stoi(fair_goal.data())) 
 			{
 				// optimization goal is set to fairness
 				_opt_goal = FAIRNESS;
-				PDBG("Optimizer - Set optimization goal to fairness.");
 				
-				// set acceptance niveau. This is a magic number and can be adjusted to finalize the optimization.
-				std::vector<char> fair_acceptance(max_len);
-				node.sub_node("fairness").sub_node("acceptance").value(fair_acceptance.data(), fair_acceptance.size());
-				accept = std::stoi(fair_acceptance.data());
-				PDBG("the acceptance interval is: %d", accept);
 			}
 			else if (std::stoi(util_goal.data()))
 			{
 				// optimization goal is set to utilization
 				_opt_goal = UTILIZATION;
-				PDBG("Optimizer - Set optimization goal to utilization.");
 			}
 			else
 			{
 				// no optimization goal is set
 				_opt_goal = NONE;
-				PDBG("Optimizer - Set optimization goal to none.");
 			}
-			
-			
 		};
 		root.for_each_sub_node("goal", fn);
+		
 		
 		// set query interval
 		std::vector<char> interval(32);
 		root.sub_node("query_interval").value(interval.data(), interval.size());
 		query_intervall = std::stoi(interval.data());
-		PDBG("Optimizer: The query interval is set to %d.", query_intervall);
 		
 		rm->detach(xml);
 		
-		PDBG("Optimizer - Finish parsing XML file.");
+		PINF("Optimizer (set_goal): New optimization goal is %s, with query_interval %d", (_opt_goal==FAIRNESS)? "fairness": (_opt_goal==UTILIZATION)? "utilization": "none", query_intervall);
 	}
 	
 	
 	void Sched_opt::add_task(unsigned int core, Rq_task::Rq_task task)
 	{
-		PDBG("Optimizer - Add task %s to task list.", std::string(task.name).c_str());
+		
+		unsigned int values [num_cores];
+		// for all cores the value is initially 0
+		for (int i=0; i < num_cores; ++i)
+		{
+			values[i] = 0;
+		}
 		
 		// convert newly arriving task to optimization task
 		Optimization_task _task;
@@ -113,31 +106,24 @@ namespace Sched_controller {
 		
 		// used to do utilization optimisation
 		_task.utilization = 1;
-		
-		// for all cores the value is initially 0
-		for (int i=0; i < num_cores; ++i)
-		{
-			_task.value[i] = 0;
-			_task.overload[core] = false;
-		}
-		
+		_task.value = values;
 		
 		_tasks.insert({_task.name, _task});
-		
+		PDBG("Optimizer (add_task): Add task %s to task list.", std::string(task.name).c_str());
 	}
-	void Sched_opt::last_job_started(const char* task_name)
+	void Sched_opt::last_job_started(std::string task_name)
 	{
 		// This function is called by the taskloader as soon as the last job was started for this task.
 		
-		if(_tasks.count(std::string(task_name)))
+		if(_tasks.count(task_name))
 		{
 			// the task was found in task list
-			_tasks.at(std::string(task_name)).last_job_started = true;
+			_tasks.at(task_name).last_job_started = true;
 		}
 		else
 		{
 			// the task was not found in task list
-			PWRN("Optimizer (last_job_started): The requested task %s was not in task list any more.", task_name);
+			PWRN("Optimizer (last_job_started): The requested task %s was not in task list any more.", task_name.c_str());
 		}
 	}
 	
@@ -166,7 +152,6 @@ namespace Sched_controller {
 			timer.msleep(query_intervall);
 		}
 		
-		// opt_goal was changed to none -> dont' query monitor any more
 		PDBG("The Optimization goal was set to none. No Optimization is done until it is set again.");
 		return;
 		
@@ -178,7 +163,7 @@ namespace Sched_controller {
 	
 	
 	// public getter
-	bool Sched_opt::scheduling_allowed(const char* task_name)
+	int Sched_opt::scheduling_allowed(std::string task_name)
 	{
 		// This function looks up the to_schedule value of the requested task.
 		// It should be called by Taskloader before starting a task (some where in _session_component::start()).
@@ -186,28 +171,24 @@ namespace Sched_controller {
 		//	_tasks -> to_schedule
 		//	_ended_tasks
 		
-		
 		// look in _tasks for requested task
-		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(std::string(task_name));
+		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(task_name);
 		if(it != _tasks.end())
 		{
-			PINF("Optimizer: Query scheduling allowance for task %s: %d", task_name, it->second.to_schedule);
 			return it->second.to_schedule;
 		}
 		
 		// look in _ended_tasks for requested task
-		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(std::string(task_name));
+		std::unordered_map<std::string, Ended_task>::iterator it_end = _ended_tasks.find(task_name);
 		if(it_end != _ended_tasks.end())
 		{
 			
 			// the requested task is in list of ended tasks
-			std::string reason = (it_end->second.cause_of_death == FINISHED)? "the task has finished its last job" : "the task was killed";
-			PINF("Optimizer: Requested task for scheduling allowance (%s) already ended (cause: %s).", task_name, reason.c_str());
-			return false;
+			PINF("Optimizer (scheduling_allowed): Task %s has already ended (cause: %s).", task_name.c_str(), (it_end->second.cause_of_death==FINISHED)? "finished" : "killed");
 			
 		}
-		PINF("Optimizer: Requested task for scheduling allowance (%s) was not found in task lisk of actual or ended tasks.", task_name);
-		return false;
+		PINF("Optimizer (scheduling_allowed): Task %s was not found in task lisk of actual or ended tasks.", task_name.c_str());
+		return -1;
 	}
 	
 	Sched_opt::Sched_opt(int sched_num_cores, Mon_manager::Connection *mon_manager, Mon_manager::Monitoring_object *sched_threads, Genode::Dataspace_capability mon_ds_cap, Genode::Dataspace_capability dead_ds_cap)
@@ -227,10 +208,6 @@ namespace Sched_controller {
 		
 		// default optimization goal = no optimization is done
 		_opt_goal = NONE;
-		
-		
-		// default value for the acceptance interval
-		accept = 0;
 		
 		// number of ms to sleep between two intervalls to query the monitor data
 		query_intervall = 100;
@@ -745,9 +722,6 @@ namespace Sched_controller {
 			}
 		}
 		
-		
-		//indicate an overload at this core
-		_tasks.at(task_str).overload[_tasks.at(task_str).core] = true;
 		
 		// increase value and check max_value
 		_tasks.at(task_str).value[_tasks.at(task_str).core] ++;
