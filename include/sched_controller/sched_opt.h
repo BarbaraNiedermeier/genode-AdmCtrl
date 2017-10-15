@@ -123,7 +123,7 @@ namespace Sched_controller {
 			
 		public:
 			void set_goal(Genode::Ram_dataspace_capability);
-			void start_optimizing();
+			void start_optimizing(std::string task_name);
 			
 			void add_task(unsigned int core, Rq_task::Rq_task task); // add task to task array (info from sched_controller that this task has been enqueued)
 			

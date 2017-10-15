@@ -109,7 +109,9 @@ namespace Sched_controller {
 		_task.value = values;
 		
 		_tasks.insert({_task.name, _task});
-		PDBG("Optimizer (add_task): Add task %s to task list.", std::string(task.name).c_str());
+		//PDBG("Optimizer (add_task): Add task %s to task list (core: %u).", std::string(task.name).c_str(), core);
+		//PDBG("Optimizer (add_task): New task %s has deadline %llu.", std::string(task.name).c_str(), task.deadline);
+		
 	}
 	void Sched_opt::last_job_started(std::string task_name)
 	{
@@ -127,37 +129,41 @@ namespace Sched_controller {
 		}
 	}
 	
-	void Sched_opt::start_optimizing()
+	void Sched_opt::start_optimizing(std::string task_name)
 	{
 		// This function determines if any thask has a job which reached its time to have a deadline
-		PDBG("Optimizer: ------------------------------- start optimizing.");
+		//PDBG("Optimizer (start_optimizing): start optimizing task %s.", task_name.c_str());
 		
-		/*
-		while (true)
+		std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(task_name);
+		if(it == _tasks.end())
 		{
-			unsigned long long current_time = timer.elapsed_ms();
-		
-			// check for all Tasks, whether inter_arrival time has elapsed
-			for(auto &it: _tasks)
+			return;
+		}
+		bool monitor_queried = false;
+		int count = 0;
+		unsigned long current_time = 0;
+		unsigned long long real_deadline = it->second.arrival_time + it->second.deadline;
+		while (!monitor_queried)
+		{
+			current_time = timer.elapsed_ms();
+			
+			// if it's time to see what happend, ...
+			if (current_time >= real_deadline || (it->second.arrival_time == 0))
 			{
-				// if it's time to see what happend, ...
-				if (current_time >= it.second.arrival_time + it.second.deadline)
-				{
-					//... query monitor-info about current task (was there any deadline miss?)
-					_query_monitor(it.first, current_time);
-				}
+				//... query monitor-info about current task (was there any deadline miss?)
+				//PDBG("Optimizer (start_optimizing):  Do optimization due to task %s at iteration %d", task_name.c_str(), count);
+				_query_monitor(it->first, current_time);
+				monitor_queried = true;
 			}
+			
+			//PDBG("Optimizer: - %d, act_time = %lu", count, current_time);
+			//PDBG("Optimizer: - %d, deadline = %llu, arrival: %llu, deadl: %llu", count, real_deadline, it->second.arrival_time, it->second.deadline);
 			
 			// wait some time to query the next monitor data
 			timer.msleep(query_intervall);
+			++count;
 		}
-		
-		PDBG("The Optimization goal was set to none. No Optimization is done until it is set again.");
-		return;
-		
-		
-		*/
-		PDBG("BN ------------------------------- No optimization is done until now.");
+		//PDBG("Optimizer (start_optimizing): Finish optimizing task %s.", task_name.c_str());
 		
 	}
 	
@@ -248,7 +254,7 @@ namespace Sched_controller {
 		_mon_manager->update_info(_mon_ds_cap);
 		
 		// loop through _threads array
-		PINF("Optimizer: Searching in monitoring list for jobs with name %s", task_str.c_str());
+		PINF("Optimizer (_query_monitor): Search in _threads for jobs of task %s", task_str.c_str());
 		for(int j=0; j<100; ++j)
 		{
 			// end of threads-array reached?
@@ -256,23 +262,29 @@ namespace Sched_controller {
 			{
 				break;
 			}
-			
+			PINF("Optimizer (_query_monitor): thread %u: task %s, arrival %llu (curr: %llu), start %llu, c: %d", _threads[j].foc_id ,_threads[j].thread_name.string(), _threads[j].arrival_time, current_time, _threads[j].start_time, _threads[j].affinity.xpos());
 			// determine unknown (new) jobs of given task
 			if( !task_str.compare(_threads[j].thread_name.string()))
 			{
 				// matching task found -> check if this thread is a new job
 				if(_threads[j].arrival_time >= _tasks.at(task_str).arrival_time)
 				{
-					PINF("Optimizer: A job of task %s has been detected at monitoring list.", _threads[j].thread_name.string());
-					new_threads_nr.push_back(j);
+					if(_threads[j].arrival_time < current_time)
+					{
+						PINF("Optimizer (_query_monitor): Task %s has a new job: foc_id = %u, arrival = %llu (current: %llu).", _threads[j].thread_name.string(), _threads[j].foc_id, _threads[j].arrival_time, current_time);
+						new_threads_nr.push_back(j);
+					}
+					
 				}
 			}
-			
-			// store foc_id to the correct task
-			std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(_threads[j].thread_name.string());
-			if(it != _tasks.end())
+			else
 			{
-				_set_newest_job(it->first, j);
+				// store foc_id to the correct task
+				std::unordered_map<std::string, Optimization_task>::iterator it = _tasks.find(_threads[j].thread_name.string());
+				if(it != _tasks.end())
+				{
+					_set_newest_job(it->first, j);
+				}
 			}
 		}
 		
@@ -295,7 +307,7 @@ namespace Sched_controller {
 			case 0:
 			{
 				// there are no new tasks => job_executed remains false
-				PINF("Optimizer: No new job for task %s was found at monitoring list.", task_str.c_str());
+				PINF("Optimizer (_query_monitor): No new job for task %s was found at monitoring list.", task_str.c_str());
 				break;
 			}
 			case 1:
@@ -308,10 +320,12 @@ namespace Sched_controller {
 				if (deadline_time_reached) // the job has no time left to be executed
 				{
 					// determine if the job had a deadline miss or correct execution and set the to_schedules values
+					PINF("Optimizer (_query_monitor): Task %s - job %u was executed.", task_str.c_str(), _threads[new_threads_nr[0]].foc_id);
 					_task_executed(task_str, new_threads_nr[0], true);
 				}
 				else // the job has still some time left for execution
 				{
+					PINF("Optimizer (_query_monitor): Task %s - job %u has time left (%llu).", task_str.c_str(), _threads[new_threads_nr[0]].foc_id, _threads[new_threads_nr[0]].arrival_time + _tasks.at(task_str).deadline);
 					_set_newest_job(task_str, new_threads_nr[0]);
 				}
 				
@@ -338,7 +352,7 @@ namespace Sched_controller {
 				
 				if ( (most_recent_thread <0) || (second_recent_thread <0) )
 				{
-					PWRN("Optimizer: Although there are at least two threads, the recent threads weren't found in new_threads list.");
+					PWRN("Optimizer (_query_monitor): Although there are at least two threads, the two recent threads weren't found in new_threads list.");
 					// job_executed stays false
 					break;
 				}
@@ -356,12 +370,19 @@ namespace Sched_controller {
 					{
 						// the most recent thread has still some time left to finish its execution
 						//-> don't change values or update to_schedule but set this thread as newest job
+						
+						PINF("Optimizer (_query_monitor): Task %s - job %u is newest job - still running.", task_str.c_str(), _threads[i].foc_id);
 						_set_newest_job(task_str, i);
 						continue;
 					}
 					
 					// only set to_schedule if thread[i] is the thread which most recently reached its deadline time
 					bool consider_this_thread =( ((i == most_recent_thread) && recent_deadline_time_reached) || ((i == second_recent_thread) && !recent_deadline_time_reached) );
+					
+					if (consider_this_thread)
+						PINF("Optimizer (_query_monitor): Task %s - job %u is newest ended job.", task_str.c_str(), _threads[i].foc_id);
+					else
+						PINF("Optimizer (_query_monitor): Task %s - job %u is older job.", task_str.c_str(), _threads[i].foc_id);
 					
 					_task_executed(task_str, i, consider_this_thread);
 				}
@@ -381,7 +402,7 @@ namespace Sched_controller {
 			if(_tasks.at(task_str).arrival_time > 0)
 			{
 				// ... determine why it's not in monitoring list
-				PINF("Optimizer: task %s had already had some tasks before, but no new one.", task_str.c_str());
+				PINF("Optimizer (_query_monitor): Task %s has not executed a job.", task_str.c_str());
 				_task_not_executed(task_str);
 			}
 			// else: the task did not start until now -> query again later...
@@ -729,6 +750,9 @@ namespace Sched_controller {
 			PWRN("Optimizer: The task %s has no id_related althought it should have been updated priorly.", task_str.c_str());
 		else
 			_reset_values(task_str);
+		
+		// update scheduling permissions
+		_set_to_schedule(task_str);
 	}
 	
 	void Sched_opt::_remove_task(std::string task_str, unsigned int foc_id, Cause_of_death cause)
@@ -815,10 +839,11 @@ namespace Sched_controller {
 	{
 		if(_threads[thread_nr].arrival_time > _tasks.at(task_str).newest_job.arrival_time)
 		{
-			PINF("Optimizer: Task %s has a new job with foc_id %d.", task_str.c_str(), _threads[thread_nr].foc_id);
 			_tasks.at(task_str).newest_job.foc_id = _threads[thread_nr].foc_id;
 			_tasks.at(task_str).newest_job.core = _threads[thread_nr].affinity.xpos();
+			_tasks.at(task_str).newest_job.arrival_time = _threads[thread_nr].arrival_time;
 			_tasks.at(task_str).newest_job.dispatched = false;
+			PINF("Optimizer: Task %s has a new job with foc_id %d, (arrival: %llu, core: %u).", task_str.c_str(), _threads[thread_nr].foc_id, _tasks.at(task_str).newest_job.arrival_time, _tasks.at(task_str).newest_job.core);
 		}
 	}
 	
@@ -835,7 +860,6 @@ namespace Sched_controller {
 		{
 			_tasks.at(task_str).arrival_time += _tasks.at(task_str).inter_arrival;
 		}
-		// toDo: update newest_job -> _set_newest_job(...)
 	}
 	
 	void Sched_opt::_set_to_schedule(std::string task_str)

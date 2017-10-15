@@ -54,9 +54,9 @@ namespace Sched_controller {
 			}
 
 			// Optimizer functions
-			void optimize ()
+			void optimize (Genode::String<32> task_name)
 			{
-				_ctr->get_optimizer()->start_optimizing();
+				_ctr->get_optimizer()->start_optimizing(task_name.string());
 			}
 
 			void set_opt_goal (Genode::Ram_dataspace_capability xml_ds_cap)

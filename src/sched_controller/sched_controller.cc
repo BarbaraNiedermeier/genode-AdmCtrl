@@ -82,6 +82,7 @@ namespace Sched_controller {
 						return -1;
 					}
 				}
+				PWRN("Sched_controller (enq): Task %s was rta analyzed", task.name);
 			}
 			else if (task.task_class == Rq_task::Task_class::lo)
 			{

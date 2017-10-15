@@ -48,9 +48,9 @@ namespace Sched_controller {
 		}
 		
 		// functions to control the optimization
-		void optimize ()
+		void optimize (Genode::String<32> task_name)
 		{
-			call<Rpc_optimize>();
+			call<Rpc_optimize>(task_name);
 		}
 		void set_opt_goal (Genode::Ram_dataspace_capability xml_ds_cap)
 		{

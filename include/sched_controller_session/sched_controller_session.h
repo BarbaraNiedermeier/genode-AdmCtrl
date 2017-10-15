@@ -28,7 +28,7 @@ namespace Sched_controller {
 		virtual void set_sync_ds(Genode::Dataspace_capability) = 0;
 		virtual int are_you_ready() = 0;
 		virtual int update_rq_buffer(int core) = 0;
-		virtual void optimize () = 0;
+		virtual void optimize (Genode::String<32> task_name) = 0;
 		virtual void set_opt_goal (Genode::Ram_dataspace_capability) = 0;
 		virtual int scheduling_allowed(Genode::String<32>) = 0;
 		virtual void last_job_started(Genode::String<32>) = 0;
@@ -38,7 +38,7 @@ namespace Sched_controller {
 		GENODE_RPC(Rpc_set_sync_ds, void, set_sync_ds, Genode::Dataspace_capability);
 		GENODE_RPC(Rpc_are_you_ready, int, are_you_ready);
 		GENODE_RPC(Rpc_update_rq_buffer, int, update_rq_buffer, int);
-		GENODE_RPC(Rpc_optimize, void, optimize);
+		GENODE_RPC(Rpc_optimize, void, optimize, Genode::String<32>);
 		GENODE_RPC(Rpc_set_opt_goal, void, set_opt_goal, Genode::Ram_dataspace_capability);
 		GENODE_RPC(Rpc_scheduling_allowed, int, scheduling_allowed, Genode::String<32>);
 		GENODE_RPC(Rpc_last_job_started, void, last_job_started, Genode::String<32>);
